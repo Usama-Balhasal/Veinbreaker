@@ -161,49 +161,6 @@ sounds:
 
 ---
 
-## 🌲 How Tree Felling Works
-
-VeinBreaker uses a **multi-source BFS (Breadth-First Search)** algorithm to detect trees:
-
-1. When a log is broken, the plugin scans outward finding all connected logs of the same species.
-2. All log positions are collected into a shared root set.
-3. A second BFS is seeded from **all** log positions simultaneously, collecting every connected leaf block within a configurable radius of any log.
-4. All logs and leaves are broken at once — no floating trees.
-
-**Supported tree types:**
-- Oak, Spruce, Birch, Jungle, Acacia, Dark Oak
-- Cherry, Mangrove, Bamboo
-- Giant spruce (2×2), Giant jungle (2×2), Dark oak (2×2)
-
-**Why the old approach failed on large trees:**  
-The previous version used separate radius-limited BFS searches per log block, making it easy for giant spruce (~200 logs) to exceed the cap and leave the top floating.  
-VeinBreaker 1.0.0 raises the cap to **400 logs** (configurable) and uses a shared-root leaf search.
-
----
-
-## ⛏️ How Ore Vein Mining Works
-
-1. When an ore is broken, the plugin BFS-scans connected ore blocks of the same family (up to `max-vein-size`).
-2. All items are dropped using Bukkit's `Block.getDrops(tool, player)` — Fortune and Silk Touch are **fully respected**.
-3. XP orbs are spawned per block based on the configured `xp` ranges.
-4. Silk Touch suppresses XP drops (matching vanilla).
-5. Tool durability decreases once per block, with Unbreaking enchantment respected.
-
-**Stone + Deepslate cross-layer mining:**  
-`COAL_ORE` and `DEEPSLATE_COAL_ORE` are treated as the same family, so veins that cross the stone/deepslate boundary are mined in a single action.
-
----
-
-## 🌾 How Crop Harvesting Works
-
-1. VeinBreaker only targets **fully-grown** crops (matching vanilla mechanics).
-2. Connected crops of the same type are collected via BFS.
-3. Items are dropped naturally.
-4. If `crop-replant: true`, the crop is **reset to age 0** (replanted) instead of being destroyed.
-
-**Supported crops:** Wheat, Carrots, Potatoes, Beetroots, Nether Wart, Cocoa Beans
-
----
 
 ## ❓ FAQ
 
