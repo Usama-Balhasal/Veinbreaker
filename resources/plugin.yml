@@ -1,0 +1,28 @@
+name: VeinBreaker
+version: '${project.version}'
+main: org.ISoma05.veinBreaker.VeinBreaker
+api-version: '1.21'
+description: Mine entire ore veins, fell whole trees, and harvest crop patches with a single block break.
+author: Usama Balhasal
+website: https://www.iceforge.world/
+
+permissions:
+  veinbreaker.use:
+    description: Allows the player to toggle and use VeinBreaker.
+    default: op
+  veinbreaker.admin:
+    description: Access to all admin commands (reload, permission management).
+    default: op
+  veinbreaker.reload:
+    description: Allows reloading the plugin configuration.
+    default: op
+  veinbreaker.help:
+    description: Allows viewing the VeinBreaker help page.
+    default: true
+
+commands:
+  veinbreaker:
+    description: VeinBreaker command hub — toggle, reload, help, and permission management.
+    usage: /veinbreaker [toggle|help|status|reload|permission]
+    permission: veinbreaker.help
+    aliases: [vb]

@@ -1,0 +1,115 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  VeinBreaker — Configuration File
+#  Plugin by Usama Balhasal | https://www.iceforge.world/
+#  GitHub: https://github.com/Usama-Balhasal/VeinBreaker
+# ─────────────────────────────────────────────────────────────────────────────
+#
+#  After editing this file, run:  /vb reload
+#  Color codes are supported in all message fields using & (e.g. &a = green).
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── General ──────────────────────────────────────────────────────────────────
+general:
+  # Print extra information to the server console for debugging.
+  debug: false
+
+  # Whether VeinBreaker starts enabled for players who have never toggled it.
+  default-toggle-state: false
+
+# ── Features ─────────────────────────────────────────────────────────────────
+features:
+  # Mine entire connected ore veins in one break.
+  ore-vein-mining: true
+
+  # Fell entire trees (logs + leaves) in one chop.
+  tree-felling: true
+
+  # Harvest connected fully-grown crop patches in one break.
+  crop-harvesting: true
+
+  # Automatically replant harvested crops (resets crop to age 0).
+  # Set to false to break crops completely (no replant).
+  crop-replant: true
+
+  # Drop XP orbs when vein-mining ores (vanilla-accurate amounts).
+  # Note: Silk Touch suppresses XP, matching vanilla behaviour.
+  xp-drops: true
+
+# ── Permissions ───────────────────────────────────────────────────────────────
+# Players need at least ONE permission from the 'use' list to toggle VeinBreaker.
+# Admins need at least ONE permission from the 'admin' list for admin commands.
+# You can add custom permission nodes from other plugins here.
+permissions:
+  use:
+    - veinbreaker.use
+  admin:
+    - veinbreaker.admin
+
+# ── Limits ────────────────────────────────────────────────────────────────────
+# Hard caps to prevent lag on extremely large structures.
+# Raise these values for bigger trees / veins, or lower them for performance.
+limits:
+  max-vein-size: 64      # Maximum ore blocks scanned per vein
+  max-tree-size: 400     # Maximum log blocks scanned per tree (giant spruce ~200+)
+  max-crop-size: 128     # Maximum crop blocks scanned per patch
+
+# ── XP Drops ──────────────────────────────────────────────────────────────────
+# XP amount per block broken. A random value between min and max is chosen.
+# Set both min and max to 0 to disable XP for a specific ore.
+#
+# Note: Iron, Gold, and Copper intentionally give 0 XP here because vanilla
+# grants their XP when smelted, not when mined.
+xp:
+  diamond:        { min: 3, max: 7 }
+  emerald:        { min: 3, max: 7 }
+  coal:           { min: 0, max: 2 }
+  lapis:          { min: 2, max: 5 }
+  redstone:       { min: 1, max: 5 }
+  quartz:         { min: 2, max: 5 }
+  iron:           { min: 0, max: 0 }
+  gold:           { min: 0, max: 0 }
+  copper:         { min: 0, max: 0 }
+  nether_gold:    { min: 0, max: 1 }
+  ancient_debris: { min: 0, max: 0 }
+
+# ── Tool Requirements ─────────────────────────────────────────────────────────
+# If enabled, VeinBreaker only activates when the player holds the correct tool.
+tools:
+  ore-requires-pickaxe: true   # Must hold a pickaxe to vein-mine ores
+  tree-requires-axe: true      # Must hold an axe to fell trees
+  crop-requires-hoe: false     # Set true to require a hoe for crop harvesting
+
+# ── Cooldowns ─────────────────────────────────────────────────────────────────
+# Per-feature cooldown in seconds. Set to 0 to disable.
+cooldowns:
+  ore: 0
+  tree: 0
+  crop: 0
+
+# ── Blacklisted Worlds ────────────────────────────────────────────────────────
+# VeinBreaker will not activate in worlds listed here.
+# Example:
+#   blacklisted-worlds:
+#     - world_nether
+#     - my_creative_world
+blacklisted-worlds: []
+
+# ── Messages ──────────────────────────────────────────────────────────────────
+# Supports & colour codes. Use {time} as a placeholder for cooldown seconds.
+messages:
+  prefix:          "&8[&bVeinBreaker&8]&r "
+  enabled:         "&aVeinBreaker &2enabled&a. Break a vein to mine it all!"
+  disabled:        "&cVeinBreaker &4disabled&c."
+  no-permission:   "&cYou don't have permission to use VeinBreaker."
+  reload-success:  "&aConfiguration reloaded successfully."
+  cooldown:        "&cPlease wait &e{time}s &cbefore using VeinBreaker again."
+  console-only:    "&cOnly players can use this command."
+
+# ── Sounds ────────────────────────────────────────────────────────────────────
+# Set enabled to false to disable all VeinBreaker sounds.
+# Sound names must be valid Bukkit Sound enum names.
+# Full list: https://jd.papermc.io/paper/1.21/org/bukkit/Sound.html
+sounds:
+  enabled:    true
+  toggle-on:  BLOCK_NOTE_BLOCK_PLING
+  toggle-off: BLOCK_NOTE_BLOCK_BASS
