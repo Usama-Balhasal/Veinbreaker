@@ -4,14 +4,14 @@
 
 **Mine entire ore veins, fell whole trees, and harvest crop patches — all with a single block break.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)](https://github.com/Usama-Balhasal/VeinBreaker/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)](https://github.com/Usama-Balhasal/Veinbreaker/releases)
 [![Minecraft](https://img.shields.io/badge/minecraft-1.21.x-green?style=for-the-badge)](https://www.spigotmc.org/)
 [![License](https://img.shields.io/badge/license-MIT-purple?style=for-the-badge)](LICENSE)
 [![API](https://img.shields.io/badge/API-Spigot%20%2F%20Paper-orange?style=for-the-badge)](https://hub.spigotmc.org/)
 
 *A lightweight, highly configurable quality-of-life plugin built for survival servers.*
 
-[🌐 Website](https://www.iceforge.world/) · [🐛 Report a Bug](https://github.com/Usama-Balhasal/VeinBreaker/issues) · [💡 Request a Feature](https://github.com/Usama-Balhasal/VeinBreaker/issues)
+[🌐 Website](https://www.iceforge.world/) · [🐛 Report a Bug](https://github.com/Usama-Balhasal/Veinbreaker/issues) · [💡 Request a Feature](https://github.com/Usama-Balhasal/Veinbreaker/issues)
 
 </div>
 
@@ -41,7 +41,7 @@
 
 ## 📦 Installation
 
-1. Download the latest `VeinBreaker-x.x.x.jar` from the [Releases](https://github.com/Usama-Balhasal/VeinBreaker/releases) page.
+1. Download the latest `VeinBreaker-x.x.x.jar` from the [Releases](https://github.com/Usama-Balhasal/Veinbreaker/releases) page.
 2. Drop it into your server's `/plugins/` folder.
 3. Restart or reload your server.
 4. Edit `plugins/VeinBreaker/config.yml` to your liking.
@@ -237,20 +237,6 @@ A: Yes, and Paper is recommended for best performance.
 
 ---
 
-## 🛠️ Building from Source
-
-```bash
-git clone https://github.com/Usama-Balhasal/VeinBreaker.git
-cd VeinBreaker
-mvn clean package
-```
-
-The compiled JAR will be in the `target/` directory.
-
-**Requirements:** Java 21, Maven 3.8+
-
----
-
 ## 📜 Changelog
 
 ### v1.0.0
@@ -285,7 +271,7 @@ The compiled JAR will be in the `target/` directory.
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
 
 ```
-MIT License — Copyright (c) 2025 Usama Balhasal
+MIT License — Copyright (c) 2026 Usama Balhasal
 ```
 
 ---
