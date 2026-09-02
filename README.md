@@ -214,12 +214,14 @@ A: Yes, and Paper is recommended for best performance.
 
 ---
 
-## 📝 Credits
+## Author
 
-**Developer:** [Usama Balhasal](https://github.com/Usama-Balhasal)  
-**Website:** [iceforge.world](https://www.iceforge.world/)  
-**Instagram:** [@vlx_soma](https://www.instagram.com/vlx_soma/)  
-**LinkedIn:** [usama-balhasal](https://se.linkedin.com/in/usama-balhasal/en)
+**Usama Balhasal**
+
+- LinkedIn: [Usama Balhasal](https://www.linkedin.com/in/usama-balhasal/)
+- Instagram: [@vlx_soma](https://www.instagram.com/vlx_soma/)
+- Facebook: [Usama Balhasal](https://www.facebook.com/usama.balhasal.05/)
+- GitHub: [@vlxb](https://github.com/Usama-Balhasal)
 
 ---
 
