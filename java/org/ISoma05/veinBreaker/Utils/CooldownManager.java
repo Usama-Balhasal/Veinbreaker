@@ -12,7 +12,7 @@ import java.util.UUID;
 public final class CooldownManager {
 
     public enum Feature {
-        ORE, TREE, CROP
+        ORE, GEODE, CAVE, TREE, CROP, PLACEMENT
     }
 
     /** feature → (player UUID → last-use timestamp) */

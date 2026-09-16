@@ -1,22 +1,21 @@
 package org.ISoma05.veinBreaker;
 
+import org.ISoma05.veinBreaker.Animation.AnimationManager;
 import org.ISoma05.veinBreaker.Commands.VeinBreakerCommand;
 import org.ISoma05.veinBreaker.Config.ConfigManager;
+import org.ISoma05.veinBreaker.Data.PlayerDataManager;
 import org.ISoma05.veinBreaker.Listeners.VeinBreakerListener;
 import org.ISoma05.veinBreaker.Utils.CooldownManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 public final class VeinBreaker extends JavaPlugin {
 
-    /** Players who currently have VeinBreaker toggled ON. */
-    private final Set<UUID> enabledPlayers = new HashSet<>();
-
-    private ConfigManager    configManager;
-    private CooldownManager  cooldownManager;
+    private ConfigManager configManager;
+    private PlayerDataManager playerDataManager;
+    private AnimationManager animationManager;
+    private CooldownManager cooldownManager;
     private VeinBreakerListener listener;
 
     @Override
@@ -25,7 +24,9 @@ public final class VeinBreaker extends JavaPlugin {
         saveDefaultConfig();
 
         // ── Managers ──────────────────────────────────────────────────────────
-        configManager  = new ConfigManager(this);
+        configManager = new ConfigManager(this);
+        playerDataManager = new PlayerDataManager(this);
+        animationManager = new AnimationManager(this);
         cooldownManager = new CooldownManager();
 
         // ── Listener ──────────────────────────────────────────────────────────
@@ -44,58 +45,79 @@ public final class VeinBreaker extends JavaPlugin {
         // ── Startup log ───────────────────────────────────────────────────────
         getLogger().info("╔══════════════════════════════════╗");
         getLogger().info("║     VeinBreaker  v" + getDescription().getVersion() + "          ║");
-        getLogger().info("║     by Usama Balhasal             ║");
-        getLogger().info("║     iceforge.world                ║");
+        getLogger().info("║     by Usama Balhasal            ║");
+        getLogger().info("║     vlx.world                    ║");
         getLogger().info("╚══════════════════════════════════╝");
-        getLogger().info("Plugin enabled successfully!");
+        getLogger().info("Plugin enabled successfully! Paper/Spigot 1.21.x - 26.2 ready.");
     }
 
     @Override
     public void onDisable() {
-        enabledPlayers.clear();
-        if (cooldownManager != null) cooldownManager.clear();
-        getLogger().info("VeinBreaker disabled. Goodbye!");
+        if (animationManager != null) {
+            animationManager.shutdown();
+        }
+        if (playerDataManager != null) {
+            playerDataManager.shutdown();
+        }
+        if (cooldownManager != null) {
+            cooldownManager.clear();
+        }
+        getLogger().info("VeinBreaker disabled. State saved safely!");
     }
 
     // =========================================================================
-    //  Toggle helpers
+    // Toggle helpers (backed by PlayerDataManager for persistence)
     // =========================================================================
 
     public boolean isVeinBreakerEnabled(UUID uuid) {
-        return enabledPlayers.contains(uuid);
+        return playerDataManager.isVeinBreakerEnabled(uuid);
     }
 
-    /**
-     * Toggles VeinBreaker for the given player.
-     *
-     * @return {@code true} if VeinBreaker is now enabled, {@code false} if disabled.
-     */
     public boolean toggleVeinBreaker(UUID uuid) {
-        if (enabledPlayers.contains(uuid)) {
-            enabledPlayers.remove(uuid);
-            return false;
-        } else {
-            enabledPlayers.add(uuid);
-            return true;
-        }
+        return playerDataManager.toggleVeinBreaker(uuid);
+    }
+
+    public boolean isPlacementEnabled(UUID uuid) {
+        return playerDataManager.isPlacementEnabled(uuid);
+    }
+
+    public boolean togglePlacement(UUID uuid) {
+        return playerDataManager.togglePlacement(uuid);
+    }
+
+    public boolean isAnimationEnabled(UUID uuid) {
+        return playerDataManager.isAnimationEnabled(uuid);
+    }
+
+    public boolean toggleAnimation(UUID uuid) {
+        return playerDataManager.toggleAnimation(uuid);
     }
 
     // =========================================================================
-    //  Reload
+    // Reload
     // =========================================================================
 
     /** Reloads config and re-initialises all config-dependent managers. */
     public void reloadPlugin() {
         configManager.reload();
-        getLogger().info("Configuration reloaded.");
+        playerDataManager.loadData();
+        getLogger().info("Configuration and persistent data reloaded.");
     }
 
     // =========================================================================
-    //  Accessors
+    // Accessors
     // =========================================================================
 
     public ConfigManager getConfigManager() {
         return configManager;
+    }
+
+    public PlayerDataManager getPlayerDataManager() {
+        return playerDataManager;
+    }
+
+    public AnimationManager getAnimationManager() {
+        return animationManager;
     }
 
     public CooldownManager getCooldownManager() {

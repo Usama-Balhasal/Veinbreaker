@@ -1,12 +1,13 @@
 package org.ISoma05.veinBreaker.Listeners;
 
+import org.ISoma05.veinBreaker.Animation.AnimationManager;
 import org.ISoma05.veinBreaker.Config.ConfigManager;
-import org.ISoma05.veinBreaker.VeinBreaker;
 import org.ISoma05.veinBreaker.Utils.BlockUtils;
 import org.ISoma05.veinBreaker.Utils.CooldownManager;
 import org.ISoma05.veinBreaker.Utils.CooldownManager.Feature;
 import org.ISoma05.veinBreaker.Utils.MessageUtils;
 import org.ISoma05.veinBreaker.Utils.XPUtils;
+import org.ISoma05.veinBreaker.VeinBreaker;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -19,74 +20,258 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.Damageable;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class VeinBreakerListener implements Listener {
 
-    // The six cardinal neighbours used in BFS scans
     private static final BlockFace[] FACES = {
         BlockFace.NORTH, BlockFace.SOUTH,
         BlockFace.EAST,  BlockFace.WEST,
         BlockFace.UP,    BlockFace.DOWN
     };
 
-    private final VeinBreaker   plugin;
+    private static final int[][] PROXIMITY_OFFSETS = buildProximityOffsets();
+
+    private static int[][] buildProximityOffsets() {
+        List<int[]> list = new ArrayList<>();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (dx == 0 && dy == 0 && dz == 0) continue;
+                    list.add(new int[]{dx, dy, dz});
+                }
+            }
+        }
+        return list.toArray(new int[0][]);
+    }
+
+    private final VeinBreaker plugin;
     private final ConfigManager config;
     private final CooldownManager cooldowns;
+    private final AnimationManager animationManager;
 
     public VeinBreakerListener(VeinBreaker plugin) {
-        this.plugin    = plugin;
-        this.config    = plugin.getConfigManager();
+        this.plugin = plugin;
+        this.config = plugin.getConfigManager();
         this.cooldowns = plugin.getCooldownManager();
+        this.animationManager = plugin.getAnimationManager();
     }
 
     // =========================================================================
-    //  Main event handler
+    //  Player Join & Quit persistence handlers
+    // =========================================================================
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        plugin.getPlayerDataManager().loadPlayer(event.getPlayer().getUniqueId());
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        plugin.getPlayerDataManager().onPlayerQuit(event.getPlayer().getUniqueId());
+    }
+
+    // =========================================================================
+    //  Outward Block Placement
+    // =========================================================================
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        Player player = event.getPlayer();
+
+        if (!config.isBlockPlacementEnabled()) return;
+        if (!hasUsePermission(player)) return;
+        if (!plugin.isVeinBreakerEnabled(player.getUniqueId())) return;
+        if (!plugin.isPlacementEnabled(player.getUniqueId())) return;
+
+        if (config.isPlacementRequiresSneak() && !player.isSneaking()) return;
+
+        String worldName = player.getWorld().getName();
+        if (config.getBlacklistedWorlds().contains(worldName)) return;
+
+        Block placed = event.getBlockPlaced();
+        Material mat = placed.getType();
+
+        // Check if placed block is eligible for outward generation/placement
+        boolean isEligible = BlockUtils.isOre(placed, config)
+            || BlockUtils.isGeode(placed, config)
+            || BlockUtils.isCaveBlock(placed, config)
+            || BlockUtils.isLog(placed, config);
+
+        if (!isEligible) return;
+
+        Block against = event.getBlockAgainst();
+
+        if (checkCooldown(player, Feature.PLACEMENT, config.getPlacementCooldown())) return;
+
+        // Calculate available count in inventory
+        int maxPlacement = config.getMaxPlacementSize();
+        List<Block> targetAirBlocks = scanPlacementTargets(placed, against, maxPlacement);
+
+        if (targetAirBlocks.isEmpty()) return;
+
+        cooldowns.recordUse(player.getUniqueId(), Feature.PLACEMENT);
+
+        boolean useAnim = config.isAnimationEnabled() && plugin.isAnimationEnabled(player.getUniqueId());
+        if (useAnim) {
+            animationManager.animateOutwardPlacement(player, targetAirBlocks, mat, placed.getBlockData());
+        } else {
+            // Instant placement
+            boolean isCreative = player.getGameMode() == GameMode.CREATIVE;
+            for (Block b : targetAirBlocks) {
+                if (!isCreative) {
+                    if (!consumeItem(player, mat)) break;
+                }
+                b.setBlockData(placed.getBlockData(), true);
+            }
+        }
+    }
+
+    private List<Block> scanPlacementTargets(Block origin, Block against, int maxBlocks) {
+        List<Block> result = new ArrayList<>();
+        if (origin == null || against == null) return result;
+
+        BlockFace placedFace = against.getFace(origin);
+        if (placedFace == null) return result;
+
+        BlockFace supportFace = placedFace.getOppositeFace();
+        Material supportMaterial = against.getType();
+
+        // Only expand on the 2D plane perpendicular to the face being placed on
+        List<BlockFace> planeFaces = new ArrayList<>();
+        for (BlockFace face : FACES) {
+            if (face != placedFace && face != supportFace) {
+                planeFaces.add(face);
+            }
+        }
+
+        Set<Block> visited = new HashSet<>();
+        Queue<Block> queue = new LinkedList<>();
+
+        queue.add(origin);
+        visited.add(origin);
+
+        while (!queue.isEmpty() && result.size() < maxBlocks) {
+            Block current = queue.poll();
+            for (BlockFace face : planeFaces) {
+                Block neighbour = current.getRelative(face);
+                if (visited.contains(neighbour)) continue;
+                visited.add(neighbour);
+
+                if (neighbour.getType().isAir()) {
+                    // Must be supported on the support face by the same backing block type
+                    Block support = neighbour.getRelative(supportFace);
+                    if (support.getType() == supportMaterial) {
+                        result.add(neighbour);
+                        queue.add(neighbour);
+                        if (result.size() >= maxBlocks) break;
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    private boolean consumeItem(Player player, Material material) {
+        ItemStack[] items = player.getInventory().getContents();
+        for (ItemStack item : items) {
+            if (item != null && item.getType() == material && item.getAmount() > 0) {
+                item.setAmount(item.getAmount() - 1);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // =========================================================================
+    //  Main Block Break Event Handler
     // =========================================================================
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
 
-        // Creative mode — let vanilla handle everything
-        if (player.getGameMode() == GameMode.CREATIVE) return;
+        if (player.getGameMode() == GameMode.CREATIVE && !config.isAllowCreative()) {
+            config.debug("VeinBreaker skipped: player in creative mode and allow-creative is false.");
+            return;
+        }
+        if (!hasUsePermission(player)) {
+            config.debug("VeinBreaker skipped: player " + player.getName() + " lacks use permission.");
+            return;
+        }
+        if (!plugin.isVeinBreakerEnabled(player.getUniqueId())) {
+            config.debug("VeinBreaker skipped: player " + player.getName() + " has VeinBreaker toggled off.");
+            return;
+        }
+        boolean sneakReq = config.isSneakToActivate();
+        boolean sprintReq = config.isSprintToActivate();
 
-        // Must have a use permission
-        if (!hasUsePermission(player)) return;
+        if (sneakReq && !player.isSneaking() && !player.isSprinting()) {
+            config.debug("VeinBreaker skipped: sneak-to-activate is true and player is neither sneaking nor sprinting.");
+            return;
+        }
+        if (sprintReq && !player.isSprinting() && !player.isSneaking()) {
+            config.debug("VeinBreaker skipped: sprint-to-activate is true and player is not sprinting.");
+            return;
+        }
 
-        // Must have veinbreaker toggled on
-        if (!plugin.isVeinBreakerEnabled(player.getUniqueId())) return;
-
-        // Blacklisted world check
         String worldName = player.getWorld().getName();
-        if (config.getBlacklistedWorlds().contains(worldName)) return;
+        if (config.getBlacklistedWorlds().contains(worldName)) {
+            config.debug("VeinBreaker skipped: world '" + worldName + "' is blacklisted.");
+            return;
+        }
 
-        Block     broken = event.getBlock();
-        ItemStack tool   = player.getInventory().getItemInMainHand();
+        Block broken = event.getBlock();
+        ItemStack tool = player.getInventory().getItemInMainHand();
 
-        if (BlockUtils.isOre(broken) && config.isOreVeinMiningEnabled()) {
-            if (!checkToolForOre(player, tool)) return;
+        if (BlockUtils.isOre(broken, config) && config.isOreVeinMiningEnabled()) {
+            if (!checkToolForOre(player, tool)) {
+                config.debug("VeinBreaker ore skipped: tool " + tool.getType() + " is not a valid pickaxe.");
+                return;
+            }
             if (checkCooldown(player, Feature.ORE, config.getOreCooldown())) return;
             handleOre(event, player, broken, tool);
             cooldowns.recordUse(player.getUniqueId(), Feature.ORE);
 
-        } else if (BlockUtils.isLog(broken) && config.isTreeFellingEnabled()) {
-            if (!checkToolForTree(player, tool)) return;
+        } else if (BlockUtils.isGeode(broken, config) && config.isGeodeMiningEnabled()) {
+            if (!checkToolForGeode(player, tool)) {
+                config.debug("VeinBreaker geode skipped: tool " + tool.getType() + " is not a valid pickaxe.");
+                return;
+            }
+            if (checkCooldown(player, Feature.GEODE, config.getGeodeCooldown())) return;
+            handleGeode(event, player, broken, tool);
+            cooldowns.recordUse(player.getUniqueId(), Feature.GEODE);
+
+        } else if (BlockUtils.isCaveBlock(broken, config) && config.isCaveMiningEnabled()) {
+            if (!checkToolForCave(player, tool)) {
+                config.debug("VeinBreaker cave skipped: tool " + tool.getType() + " is not a valid pickaxe.");
+                return;
+            }
+            if (checkCooldown(player, Feature.CAVE, config.getCaveCooldown())) return;
+            handleCave(event, player, broken, tool);
+            cooldowns.recordUse(player.getUniqueId(), Feature.CAVE);
+
+        } else if (BlockUtils.isLog(broken, config) && config.isTreeFellingEnabled()) {
+            if (!checkToolForTree(player, tool)) {
+                config.debug("VeinBreaker tree skipped: tool " + tool.getType() + " is not a valid axe.");
+                return;
+            }
             if (checkCooldown(player, Feature.TREE, config.getTreeCooldown())) return;
             handleTree(event, player, broken, tool);
             cooldowns.recordUse(player.getUniqueId(), Feature.TREE);
 
-        } else if (BlockUtils.isCrop(broken) && config.isCropHarvestingEnabled()) {
-            if (!checkToolForCrop(player, tool)) return;
+        } else if (BlockUtils.isCrop(broken, config) && config.isCropHarvestingEnabled()) {
+            if (!checkToolForCrop(player, tool)) {
+                config.debug("VeinBreaker crop skipped: tool " + tool.getType() + " is not a valid hoe.");
+                return;
+            }
             if (checkCooldown(player, Feature.CROP, config.getCropCooldown())) return;
             handleCrop(event, player, broken, tool);
             cooldowns.recordUse(player.getUniqueId(), Feature.CROP);
@@ -94,10 +279,9 @@ public class VeinBreakerListener implements Listener {
     }
 
     // =========================================================================
-    //  Permission helpers
+    //  Permission & Cooldown helpers
     // =========================================================================
 
-    /** Returns true if the player has at least one configured use permission. */
     public boolean hasUsePermission(Player player) {
         for (String perm : config.getUsePermissions()) {
             if (player.hasPermission(perm)) return true;
@@ -105,13 +289,6 @@ public class VeinBreakerListener implements Listener {
         return false;
     }
 
-    // =========================================================================
-    //  Cooldown helpers
-    // =========================================================================
-
-    /**
-     * Returns {@code true} (and sends message) if the player is still on cooldown.
-     */
     private boolean checkCooldown(Player player, Feature feature, int cooldownSecs) {
         int remaining = cooldowns.getRemainingSeconds(player.getUniqueId(), feature, cooldownSecs);
         if (remaining > 0) {
@@ -123,205 +300,356 @@ public class VeinBreakerListener implements Listener {
     }
 
     // =========================================================================
-    //  Tool requirement helpers
+    //  Tool requirements
     // =========================================================================
 
     private boolean checkToolForOre(Player player, ItemStack tool) {
+        if (player.getGameMode() == GameMode.CREATIVE) return true;
         if (!config.isOreRequiresPickaxe()) return true;
         return BlockUtils.isPickaxe(tool);
     }
 
+    private boolean checkToolForGeode(Player player, ItemStack tool) {
+        if (player.getGameMode() == GameMode.CREATIVE) return true;
+        if (!config.isGeodeRequiresPickaxe()) return true;
+        return BlockUtils.isPickaxe(tool);
+    }
+
+    private boolean checkToolForCave(Player player, ItemStack tool) {
+        if (player.getGameMode() == GameMode.CREATIVE) return true;
+        if (!config.isCaveRequiresPickaxe()) return true;
+        return BlockUtils.isPickaxe(tool);
+    }
+
     private boolean checkToolForTree(Player player, ItemStack tool) {
+        if (player.getGameMode() == GameMode.CREATIVE) return true;
         if (!config.isTreeRequiresAxe()) return true;
         return BlockUtils.isAxe(tool);
     }
 
     private boolean checkToolForCrop(Player player, ItemStack tool) {
+        if (player.getGameMode() == GameMode.CREATIVE) return true;
         if (!config.isCropRequiresHoe()) return true;
         return BlockUtils.isHoe(tool);
     }
 
     // =========================================================================
-    //  ORE — Fortune / Silk Touch aware, XP drops
+    //  ORE
     // =========================================================================
 
     private void handleOre(BlockBreakEvent event, Player player, Block origin, ItemStack tool) {
         int maxVein = config.getMaxVeinSize();
-        List<Block> vein = bfs(origin, maxVein, b -> BlockUtils.isSameOre(b, origin));
+
+        List<Block> vein = config.isProximityDetectionEnabled()
+            ? bfsProximity(origin, maxVein, b -> BlockUtils.isSameOre(b, origin, config))
+            : bfs(origin, maxVein, b -> BlockUtils.isSameOre(b, origin, config));
 
         config.debug("Ore vein found: " + vein.size() + " blocks at " + formatLoc(origin.getLocation()));
+        if (vein.size() <= 1) return;
 
-        if (vein.size() <= 1) return; // Nothing extra — let vanilla break the one block normally
-
-        // We control all drops and XP from here
+        boolean isCreative = player.getGameMode() == GameMode.CREATIVE;
         event.setDropItems(false);
         event.setExpToDrop(0);
 
-        for (Block block : vein) {
-            Location centre = block.getLocation().add(0.5, 0.5, 0.5);
-
-            // Drop items (Fortune / Silk Touch respected automatically)
-            for (ItemStack drop : block.getDrops(tool, player)) {
-                block.getWorld().dropItemNaturally(centre, drop);
+        if (!isCreative) {
+            Location originCenter = origin.getLocation().add(0.5, 0.5, 0.5);
+            for (ItemStack drop : origin.getDrops(tool, player)) {
+                giveOrDrop(player, originCenter, drop);
             }
-
-            // Drop XP (Silk Touch suppressed inside XPUtils)
             if (config.isXpDropsEnabled()) {
-                XPUtils.dropXp(centre, block.getType(), tool, config);
+                if (config.isXpAutoCollect()) {
+                    XPUtils.giveXp(player, origin.getType(), tool, config);
+                } else {
+                    XPUtils.dropXp(originCenter, origin.getType(), tool, config);
+                }
             }
+            if (config.isToolDurabilityEnabled()) {
+                damageTool(player, tool);
+            }
+        }
 
-            // Apply tool durability damage (1 per block, respecting Unbreaking)
-            damageTool(player, tool);
+        vein.remove(origin);
 
-            block.setType(Material.AIR);
+        boolean useAnim = config.isAnimationEnabled() && plugin.isAnimationEnabled(player.getUniqueId());
+        if (useAnim) {
+            animationManager.animateOutwardBreak(player, vein, tool, false, null);
+        } else {
+            instantBreak(player, vein, tool);
         }
     }
 
     // =========================================================================
-    //  TREE — logs + connected leaves, fixed BFS for giant trees
+    //  GEODE (Amethyst blocks, budding amethyst, clusters, calcite, basalt)
+    // =========================================================================
+
+    private void handleGeode(BlockBreakEvent event, Player player, Block origin, ItemStack tool) {
+        int maxGeode = config.getMaxGeodeSize();
+        boolean protectBudding = config.isProtectBuddingAmethyst();
+
+        Predicate<Block> filter = b -> {
+            if (protectBudding && b.getType() == Material.BUDDING_AMETHYST) return false;
+            return BlockUtils.isSameGeode(b, origin, config);
+        };
+
+        List<Block> geode = config.isProximityDetectionEnabled()
+            ? bfsProximity(origin, maxGeode, filter)
+            : bfs(origin, maxGeode, filter);
+
+        config.debug("Geode formation found: " + geode.size() + " blocks at " + formatLoc(origin.getLocation()));
+        if (geode.size() <= 1) return;
+
+        boolean isCreative = player.getGameMode() == GameMode.CREATIVE;
+        event.setDropItems(false);
+        event.setExpToDrop(0);
+
+        if (!isCreative) {
+            Location originCenter = origin.getLocation().add(0.5, 0.5, 0.5);
+            for (ItemStack drop : origin.getDrops(tool, player)) {
+                giveOrDrop(player, originCenter, drop);
+            }
+            if (config.isXpDropsEnabled()) {
+                if (config.isXpAutoCollect()) {
+                    XPUtils.giveXp(player, origin.getType(), tool, config);
+                } else {
+                    XPUtils.dropXp(originCenter, origin.getType(), tool, config);
+                }
+            }
+            if (config.isToolDurabilityEnabled()) {
+                damageTool(player, tool);
+            }
+        }
+
+        geode.remove(origin);
+
+        boolean useAnim = config.isAnimationEnabled() && plugin.isAnimationEnabled(player.getUniqueId());
+        if (useAnim) {
+            animationManager.animateOutwardBreak(player, geode, tool, false, null);
+        } else {
+            instantBreak(player, geode, tool);
+        }
+    }
+
+    // =========================================================================
+    //  CAVE FORMATIONS (Dripstone, Sculk, Tuff, Raw ore blocks)
+    // =========================================================================
+
+    private void handleCave(BlockBreakEvent event, Player player, Block origin, ItemStack tool) {
+        int maxCave = config.getMaxCaveSize();
+
+        List<Block> cave = config.isProximityDetectionEnabled()
+            ? bfsProximity(origin, maxCave, b -> BlockUtils.isSameCaveBlock(b, origin, config))
+            : bfs(origin, maxCave, b -> BlockUtils.isSameCaveBlock(b, origin, config));
+
+        config.debug("Cave formation found: " + cave.size() + " blocks at " + formatLoc(origin.getLocation()));
+        if (cave.size() <= 1) return;
+
+        boolean isCreative = player.getGameMode() == GameMode.CREATIVE;
+        event.setDropItems(false);
+        event.setExpToDrop(0);
+
+        if (!isCreative) {
+            Location originCenter = origin.getLocation().add(0.5, 0.5, 0.5);
+            for (ItemStack drop : origin.getDrops(tool, player)) {
+                giveOrDrop(player, originCenter, drop);
+            }
+            if (config.isXpDropsEnabled()) {
+                if (config.isXpAutoCollect()) {
+                    XPUtils.giveXp(player, origin.getType(), tool, config);
+                } else {
+                    XPUtils.dropXp(originCenter, origin.getType(), tool, config);
+                }
+            }
+            if (config.isToolDurabilityEnabled()) {
+                damageTool(player, tool);
+            }
+        }
+
+        cave.remove(origin);
+
+        boolean useAnim = config.isAnimationEnabled() && plugin.isAnimationEnabled(player.getUniqueId());
+        if (useAnim) {
+            animationManager.animateOutwardBreak(player, cave, tool, false, null);
+        } else {
+            instantBreak(player, cave, tool);
+        }
+    }
+
+    // =========================================================================
+    //  TREE
     // =========================================================================
 
     private void handleTree(BlockBreakEvent event, Player player, Block origin, ItemStack tool) {
         int maxTree = config.getMaxTreeSize();
-        List<Block> logs = bfs(origin, maxTree, b -> BlockUtils.isSameLog(b, origin));
+        List<Block> logs = bfs(origin, maxTree, b -> BlockUtils.isSameLog(b, origin, config));
 
         config.debug("Tree found: " + logs.size() + " logs at " + formatLoc(origin.getLocation()));
-
         if (logs.size() <= 1) return;
 
+        boolean isCreative = player.getGameMode() == GameMode.CREATIVE;
         event.setDropItems(false);
 
-        // Build a set of log positions for O(1) lookups in the leaf BFS
-        Set<Block> logSet = new HashSet<>(logs);
-
-        // Break all logs
-        for (Block log : logs) {
-            Location centre = log.getLocation().add(0.5, 0.5, 0.5);
-            for (ItemStack drop : log.getDrops(tool, player)) {
-                log.getWorld().dropItemNaturally(centre, drop);
+        if (!isCreative) {
+            Location originCenter = origin.getLocation().add(0.5, 0.5, 0.5);
+            for (ItemStack drop : origin.getDrops(tool, player)) {
+                giveOrDrop(player, originCenter, drop);
             }
-            damageTool(player, tool);
-            log.setType(Material.AIR);
+            if (config.isToolDurabilityEnabled()) {
+                damageTool(player, tool);
+            }
         }
 
-        // Collect leaves: single shared BFS seeded by all log positions.
-        // This handles large canopies without per-log radius restrictions.
-        Set<Block> leaves = collectLeaves(logSet, 10);
+        logs.remove(origin);
 
-        config.debug("Leaves to remove: " + leaves.size());
+        boolean useAnim = config.isAnimationEnabled() && plugin.isAnimationEnabled(player.getUniqueId());
 
-        for (Block leaf : leaves) {
-            if (!BlockUtils.isLeaf(leaf)) continue;
-            Location centre = leaf.getLocation().add(0.5, 0.5, 0.5);
-            for (ItemStack drop : leaf.getDrops(tool, player)) {
-                leaf.getWorld().dropItemNaturally(centre, drop);
-            }
-            leaf.setType(Material.AIR);
-        }
-    }
-
-    /**
-     * Multi-source BFS that collects connected leaf blocks reachable from any
-     * block in {@code roots} within {@code maxRadius} blocks of the nearest root.
-     * <p>
-     * Using a single shared BFS rather than per-log radius searches ensures that
-     * large, spread canopies (giant spruce, jungle, dark oak) are fully captured.
-     */
-    private Set<Block> collectLeaves(Set<Block> roots, int maxRadius) {
-        Set<Block>   result  = new HashSet<>();
-        Set<Block>   visited = new HashSet<>(roots);
-        Queue<Block> queue   = new LinkedList<>(roots);
-
-        while (!queue.isEmpty()) {
-            Block current = queue.poll();
-
-            for (BlockFace face : FACES) {
-                Block neighbour = current.getRelative(face);
-                if (visited.contains(neighbour)) continue;
-                visited.add(neighbour);
-
-                if (!BlockUtils.isLeaf(neighbour)) continue;
-
-                // Only add if within maxRadius of at least one original log position
-                if (withinRadiusOfAny(neighbour, roots, maxRadius)) {
-                    result.add(neighbour);
-                    queue.add(neighbour);
+        if (useAnim) {
+            animationManager.animateOutwardBreak(player, logs, tool, false, brokenLogs -> {
+                Set<Block> rootsForLeaves = new HashSet<>(brokenLogs);
+                rootsForLeaves.add(origin);
+                Set<Block> leaves = collectLeaves(rootsForLeaves, 10);
+                if (!leaves.isEmpty()) {
+                    animationManager.animateOutwardBreak(player, new ArrayList<>(leaves), tool, false, null);
                 }
+            });
+        } else {
+            Set<Block> brokenLogs = instantBreak(player, logs, tool);
+            Set<Block> rootsForLeaves = new HashSet<>(brokenLogs);
+            rootsForLeaves.add(origin);
+            Set<Block> leaves = collectLeaves(rootsForLeaves, 10);
+            for (Block leaf : leaves) {
+                if (!BlockUtils.isLeaf(leaf)) continue;
+                if (!isCreative) {
+                    Location centre = leaf.getLocation().add(0.5, 0.5, 0.5);
+                    for (ItemStack drop : leaf.getDrops(tool, player)) {
+                        giveOrDrop(player, centre, drop);
+                    }
+                }
+
+                if (config.isAnimationParticlesEnabled()) {
+                    Location centre = leaf.getLocation().add(0.5, 0.5, 0.5);
+                    animationManager.spawnBlockParticles(centre, leaf.getType(), leaf.getBlockData());
+                }
+                leaf.setType(Material.AIR);
             }
         }
-
-        return result;
-    }
-
-    /** Returns true if {@code block} is within {@code radius} of any block in {@code set}. */
-    private boolean withinRadiusOfAny(Block block, Set<Block> set, int radius) {
-        for (Block root : set) {
-            if (!block.getWorld().equals(root.getWorld())) continue;
-            int dx = Math.abs(block.getX() - root.getX());
-            int dy = Math.abs(block.getY() - root.getY());
-            int dz = Math.abs(block.getZ() - root.getZ());
-            if (dx <= radius && dy <= radius && dz <= radius) return true;
-        }
-        return false;
     }
 
     // =========================================================================
-    //  CROP — harvest + optional replant
+    //  CROP (Harvest & Outward Replanting)
     // =========================================================================
 
     private void handleCrop(BlockBreakEvent event, Player player, Block origin, ItemStack tool) {
         int maxCrop = config.getMaxCropSize();
-        List<Block> crops = bfs(origin, maxCrop, b -> BlockUtils.isSameCrop(b, origin));
+        List<Block> crops = bfs(origin, maxCrop, b -> BlockUtils.isSameCrop(b, origin, config));
 
         config.debug("Crop patch found: " + crops.size() + " blocks at " + formatLoc(origin.getLocation()));
 
-        if (crops.size() <= 1) return;
+        boolean replant = config.isCropReplantEnabled();
+        if (crops.size() <= 1 && !replant) return;
 
+        boolean isCreative = player.getGameMode() == GameMode.CREATIVE;
         event.setDropItems(false);
 
-        boolean replant = config.isCropReplantEnabled();
-
-        for (Block crop : crops) {
-            // Drop items
-            for (ItemStack drop : crop.getDrops()) {
-                crop.getWorld().dropItemNaturally(crop.getLocation().add(0.5, 0.5, 0.5), drop);
-            }
-
-            if (replant) {
-                // Reset to age 0 (replanted sapling state) rather than breaking to AIR
-                resetCrop(crop);
-            } else {
-                crop.setType(Material.AIR);
+        final Material originType = origin.getType();
+        if (!isCreative) {
+            Location originCenter = origin.getLocation().add(0.5, 0.5, 0.5);
+            boolean suppressSeeds = replant && isSeedSuppressedCrop(originType);
+            for (ItemStack drop : origin.getDrops()) {
+                if (suppressSeeds && isSeedItem(drop.getType())) continue;
+                giveOrDrop(player, originCenter, drop);
             }
         }
-    }
 
-    /**
-     * Resets a fully-grown crop to age 0 (freshly planted).
-     * Handles all Ageable crops. Non-ageable crops are set to AIR.
-     */
-    private void resetCrop(Block crop) {
-        BlockData data = crop.getBlockData();
-        if (data instanceof Ageable ageable) {
-            ageable.setAge(0);
-            crop.setBlockData(ageable);
+        if (replant) {
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                origin.setType(originType);
+                BlockData bd = origin.getBlockData();
+                if (bd instanceof Ageable ageable) {
+                    ageable.setAge(0);
+                    origin.setBlockData(ageable);
+                }
+            }, 1L);
+        }
+
+        crops.remove(origin);
+
+        boolean useAnim = config.isAnimationEnabled() && plugin.isAnimationEnabled(player.getUniqueId());
+
+        if (useAnim) {
+            animationManager.animateOutwardBreak(player, crops, tool, replant, null);
         } else {
-            crop.setType(Material.AIR);
+            for (Block crop : crops) {
+                if (!isCreative) {
+                    boolean suppressSeeds = replant && isSeedSuppressedCrop(crop.getType());
+                    for (ItemStack drop : crop.getDrops()) {
+                        if (suppressSeeds && isSeedItem(drop.getType())) continue;
+                        giveOrDrop(player, crop.getLocation().add(0.5, 0.5, 0.5), drop);
+                    }
+                }
+
+                if (replant) {
+                    resetCrop(crop);
+                } else {
+                    crop.setType(Material.AIR);
+                }
+            }
         }
     }
 
     // =========================================================================
-    //  Generic BFS
+    //  Instant break helper (when animation is toggled off)
     // =========================================================================
 
-    /**
-     * Breadth-first search collecting connected blocks that satisfy {@code filter},
-     * up to {@code maxBlocks}. Always includes {@code origin}.
-     */
+    private Set<Block> instantBreak(Player player, List<Block> blocks, ItemStack tool) {
+        Set<Block> broken = new HashSet<>();
+        boolean isCreative = player.getGameMode() == GameMode.CREATIVE;
+        boolean preventBreak = !isCreative && config.isPreventToolBreak() && config.isToolDurabilityEnabled();
+        boolean durabilityEnabled = !isCreative && config.isToolDurabilityEnabled();
+        boolean xpAutoCollect = !isCreative && config.isXpAutoCollect();
+        boolean xpEnabled = !isCreative && config.isXpDropsEnabled();
+
+        for (Block block : blocks) {
+            if (block.getType().isAir()) continue;
+            if (preventBreak && wouldBreakTool(tool)) break;
+
+            if (!isCreative) {
+                Location centre = block.getLocation().add(0.5, 0.5, 0.5);
+                for (ItemStack drop : block.getDrops(tool, player)) {
+                    giveOrDrop(player, centre, drop);
+                }
+
+                if (xpEnabled) {
+                    if (xpAutoCollect) {
+                        XPUtils.giveXp(player, block.getType(), tool, config);
+                    } else {
+                        XPUtils.dropXp(centre, block.getType(), tool, config);
+                    }
+                }
+
+                if (durabilityEnabled) {
+                    damageTool(player, tool);
+                }
+            }
+
+            if (config.isAnimationParticlesEnabled()) {
+                Location centre = block.getLocation().add(0.5, 0.5, 0.5);
+                animationManager.spawnBlockParticles(centre, block.getType(), block.getBlockData());
+            }
+
+            block.setType(Material.AIR);
+            broken.add(block);
+        }
+        return broken;
+    }
+
+    // =========================================================================
+    //  BFS Traversal
+    // =========================================================================
+
     private List<Block> bfs(Block origin, int maxBlocks, Predicate<Block> filter) {
-        List<Block>  result  = new ArrayList<>();
-        Set<Block>   visited = new HashSet<>();
-        Queue<Block> queue   = new LinkedList<>();
+        List<Block> result = new ArrayList<>();
+        Set<Block> visited = new HashSet<>();
+        Queue<Block> queue = new LinkedList<>();
 
         queue.add(origin);
         visited.add(origin);
@@ -341,24 +669,128 @@ public class VeinBreakerListener implements Listener {
                 }
             }
         }
-
         return result;
     }
 
-    // =========================================================================
-    //  Tool durability
-    // =========================================================================
+    private List<Block> bfsProximity(Block origin, int maxBlocks, Predicate<Block> filter) {
+        List<Block> result = new ArrayList<>();
+        Set<Long> visited = new HashSet<>();
+        Queue<Block> queue = new LinkedList<>();
 
-    /**
-     * Applies 1 durability damage to the tool, respecting the Unbreaking enchantment.
-     * Does nothing if the tool is unbreakable or has no durability (e.g. bare hand).
-     */
+        queue.add(origin);
+        visited.add(blockKey(origin));
+        result.add(origin);
+
+        while (!queue.isEmpty() && result.size() < maxBlocks) {
+            Block current = queue.poll();
+            int cx = current.getX();
+            int cy = current.getY();
+            int cz = current.getZ();
+
+            for (int[] offset : PROXIMITY_OFFSETS) {
+                Block neighbour = current.getWorld().getBlockAt(
+                    cx + offset[0],
+                    cy + offset[1],
+                    cz + offset[2]
+                );
+                long key = blockKey(neighbour);
+                if (visited.contains(key)) continue;
+                visited.add(key);
+
+                if (filter.test(neighbour)) {
+                    result.add(neighbour);
+                    queue.add(neighbour);
+                    if (result.size() >= maxBlocks) break;
+                }
+            }
+        }
+        return result;
+    }
+
+    private Set<Block> collectLeaves(Set<Block> roots, int maxRadius) {
+        Set<Block> result = new HashSet<>();
+        Set<Block> visited = new HashSet<>(roots);
+        Queue<Block> queue = new LinkedList<>(roots);
+
+        while (!queue.isEmpty()) {
+            Block current = queue.poll();
+
+            for (BlockFace face : FACES) {
+                Block neighbour = current.getRelative(face);
+                if (visited.contains(neighbour)) continue;
+                visited.add(neighbour);
+
+                if (!BlockUtils.isLeaf(neighbour)) continue;
+
+                if (withinRadiusOfAny(neighbour, roots, maxRadius)) {
+                    result.add(neighbour);
+                    queue.add(neighbour);
+                }
+            }
+        }
+        return result;
+    }
+
+    private boolean withinRadiusOfAny(Block block, Set<Block> set, int radius) {
+        for (Block root : set) {
+            if (!block.getWorld().equals(root.getWorld())) continue;
+            int dx = Math.abs(block.getX() - root.getX());
+            int dy = Math.abs(block.getY() - root.getY());
+            int dz = Math.abs(block.getZ() - root.getZ());
+            if (dx <= radius && dy <= radius && dz <= radius) return true;
+        }
+        return false;
+    }
+
+    private static long blockKey(Block block) {
+        return ((long)(block.getX() & 0x3FFFFFF) << 38)
+             | ((long)(block.getY() & 0xFFF)     << 26)
+             |  (long)(block.getZ() & 0x3FFFFFF);
+    }
+
+    private void giveOrDrop(Player player, Location centre, ItemStack drop) {
+        if (config.isDirectToInventory()) {
+            Map<Integer, ItemStack> leftover = player.getInventory().addItem(drop);
+            for (ItemStack overflow : leftover.values()) {
+                centre.getWorld().dropItemNaturally(centre, overflow);
+            }
+        } else {
+            centre.getWorld().dropItemNaturally(centre, drop);
+        }
+    }
+
+    private void resetCrop(Block crop) {
+        BlockData data = crop.getBlockData();
+        if (data instanceof Ageable ageable) {
+            ageable.setAge(0);
+            crop.setBlockData(ageable);
+        } else {
+            crop.setType(Material.AIR);
+        }
+    }
+
+    private boolean isSeedSuppressedCrop(Material cropType) {
+        return cropType == Material.WHEAT || cropType == Material.BEETROOTS;
+    }
+
+    private boolean isSeedItem(Material material) {
+        return material == Material.WHEAT_SEEDS || material == Material.BEETROOT_SEEDS;
+    }
+
+    private boolean wouldBreakTool(ItemStack tool) {
+        if (tool == null || tool.getType().isAir()) return false;
+        if (!(tool.getItemMeta() instanceof Damageable meta)) return false;
+        if (meta.isUnbreakable()) return false;
+
+        int remaining = tool.getType().getMaxDurability() - meta.getDamage();
+        return remaining <= 1;
+    }
+
     private void damageTool(Player player, ItemStack tool) {
         if (tool == null || tool.getType().isAir()) return;
         if (!(tool.getItemMeta() instanceof Damageable meta)) return;
         if (meta.isUnbreakable()) return;
 
-        // Unbreaking: chance to skip damage = level / (level + 1)
         int unbreaking = tool.getEnchantmentLevel(org.bukkit.enchantments.Enchantment.UNBREAKING);
         if (unbreaking > 0) {
             double skipChance = (double) unbreaking / (unbreaking + 1);
@@ -369,9 +801,7 @@ public class VeinBreakerListener implements Listener {
         int maxDurability = tool.getType().getMaxDurability();
 
         if (newDamage >= maxDurability) {
-            // Tool breaks
-            player.playSound(player.getLocation(),
-                org.bukkit.Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
+            player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
             tool.setAmount(0);
             return;
         }
@@ -379,10 +809,6 @@ public class VeinBreakerListener implements Listener {
         meta.setDamage(newDamage);
         tool.setItemMeta(meta);
     }
-
-    // =========================================================================
-    //  Helpers
-    // =========================================================================
 
     private String formatLoc(Location loc) {
         return "(" + loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ() + ")";

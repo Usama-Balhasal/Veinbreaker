@@ -5,13 +5,13 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.ExperienceOrb;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Random;
 
 /**
- * Handles XP orb spawning for vein-mined ores.
- * <p>
+ * Handles XP rewards for vein-mined ores, geodes, and cave blocks.
  * XP amounts are configurable in config.yml under the {@code xp} section.
  * Silk Touch suppresses XP, matching vanilla Minecraft behaviour.
  */
@@ -21,38 +21,49 @@ public final class XPUtils {
 
     private XPUtils() {}
 
-    /**
-     * Spawns an XP orb at the given location if the ore should produce XP.
-     * Silk Touch suppresses the drop entirely (vanilla parity).
-     *
-     * @param location    Centre of the broken ore block.
-     * @param material    The ore material.
-     * @param tool        The tool used to break the block.
-     * @param config      ConfigManager to read XP ranges from.
-     */
+    // =========================================================================
+    //  Orb-drop mode (vanilla style)
+    // =========================================================================
+
     public static void dropXp(Location location, Material material, ItemStack tool, ConfigManager config) {
-        // Silk Touch suppresses XP (vanilla behaviour)
         if (tool != null && tool.containsEnchantment(Enchantment.SILK_TOUCH)) return;
 
-        String family = getOreFamily(material);
-        if (family == null) return;
-
-        int min = config.getXpMin(family);
-        int max = config.getXpMax(family);
-
-        if (max <= 0) return; // No XP for this ore (iron, gold, copper)
-
-        int amount = (min == max) ? min : min + RANDOM.nextInt(max - min + 1);
+        int amount = rollXp(material, config);
         if (amount <= 0) return;
 
         ExperienceOrb orb = location.getWorld().spawn(location, ExperienceOrb.class);
         orb.setExperience(amount);
     }
 
-    /**
-     * Maps a {@link Material} to its XP config key (matches config.yml {@code xp} section).
-     * Returns {@code null} for non-ore materials.
-     */
+    // =========================================================================
+    //  Auto-collect mode (direct grant)
+    // =========================================================================
+
+    public static void giveXp(Player player, Material material, ItemStack tool, ConfigManager config) {
+        if (tool != null && tool.containsEnchantment(Enchantment.SILK_TOUCH)) return;
+
+        int amount = rollXp(material, config);
+        if (amount <= 0) return;
+
+        player.giveExp(amount);
+    }
+
+    // =========================================================================
+    //  Shared helpers
+    // =========================================================================
+
+    private static int rollXp(Material material, ConfigManager config) {
+        String family = getOreFamily(material);
+        if (family == null) return 0;
+
+        int min = config.getXpMin(family);
+        int max = config.getXpMax(family);
+
+        if (max <= 0) return 0;
+
+        return (min == max) ? min : min + RANDOM.nextInt(max - min + 1);
+    }
+
     public static String getOreFamily(Material material) {
         return switch (material) {
             case DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE          -> "diamond";
@@ -66,6 +77,11 @@ public final class XPUtils {
             case NETHER_GOLD_ORE                             -> "nether_gold";
             case COPPER_ORE,  DEEPSLATE_COPPER_ORE           -> "copper";
             case ANCIENT_DEBRIS                              -> "ancient_debris";
+            case AMETHYST_CLUSTER                            -> "amethyst_cluster";
+            case SCULK                                       -> "sculk";
+            case SCULK_CATALYST                              -> "sculk_catalyst";
+            case SCULK_SENSOR                                -> "sculk_sensor";
+            case SCULK_SHRIEKER                              -> "sculk_shrieker";
             default -> null;
         };
     }

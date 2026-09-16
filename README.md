@@ -2,16 +2,21 @@
 
 # ⛏️ VeinBreaker
 
-**Mine entire ore veins, fell whole trees, and harvest crop patches — all with a single block break.**
+**Mine entire ore veins, geode formations, and cave structures, fell whole trees, harvest crops, and place blocks with outward ripple animations.**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)](https://github.com/Usama-Balhasal/VeinBreaker/releases)
-[![Minecraft](https://img.shields.io/badge/minecraft-1.21.x-green?style=for-the-badge)](https://www.spigotmc.org/)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue?style=for-the-badge)](https://github.com/Usama-Balhasal/VeinBreaker/releases)
+[![Minecraft](https://img.shields.io/badge/minecraft-1.21.x--26.2-green?style=for-the-badge)](https://www.spigotmc.org/)
 [![License](https://img.shields.io/badge/license-MIT-purple?style=for-the-badge)](LICENSE)
 [![API](https://img.shields.io/badge/API-Spigot%20%2F%20Paper-orange?style=for-the-badge)](https://hub.spigotmc.org/)
 
 *A lightweight, highly configurable quality-of-life plugin built for survival servers.*
 
-[🌐 Website](https://www.iceforge.world/) · [🐛 Report a Bug](https://github.com/Usama-Balhasal/VeinBreaker/issues) · [💡 Request a Feature](https://github.com/Usama-Balhasal/VeinBreaker/issues)
+[🌐 Website](https://www.vlx.world/) · [🐛 Report a Bug](https://github.com/Usama-Balhasal/VeinBreaker/issues) · [💡 Request a Feature](https://github.com/Usama-Balhasal/VeinBreaker/issues)
+
+<br>
+
+### 🎬 Live Demo
+<img src="main.gif" alt="VeinBreaker Live Demo" width="85%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
 
 </div>
 
@@ -21,52 +26,61 @@
 
 | Feature | Description |
 |---|---|
-| ⛏️ **Vein Mining** | Break an entire connected ore vein with one block break |
-| 🌲 **Tree Felling** | Chop down whole trees — logs and leaves — instantly |
-| 🌾 **Crop Harvesting** | Harvest entire patches of fully-grown crops in one swing |
-| 🌱 **Auto-Replant** | Optionally replant crops automatically after harvest |
-| ✨ **XP Drops** | Vanilla-accurate XP orbs dropped per ore block (configurable) |
-| 🔧 **Tool Enforcement** | Require the correct tool (pickaxe/axe/hoe) for each mode |
-| ⏱️ **Cooldowns** | Per-feature cooldowns to prevent spam |
-| 🌍 **World Blacklist** | Disable VeinBreaker in specific worlds |
-| 🎨 **Color Messages** | Fully customisable messages with `&` colour code support |
-| 🔊 **Sound Feedback** | Configurable toggle sounds |
-| 🔑 **Multi-Permission** | Supports multiple configurable permission nodes |
-| ♻️ **Live Reload** | Reload the config without restarting the server |
-| 🧠 **Safe BFS Engine** | Crash-proof block scanning with configurable size limits |
-| 🌿 **Fortune & Silk Touch** | Full enchantment support — drops respect all tool enchants |
-| 🔨 **Tool Durability** | Tool takes proper durability damage (Unbreaking respected) |
+| ⛏️ **Ore Vein Mining** | Break an entire connected ore vein with a single swing across Overworld, Nether, and Deepslate |
+| 💎 **Geode Mining** | Harvest Amethyst clusters, buds, blocks, calcite, and smooth basalt simultaneously |
+| 🪨 **Cave Formations** | Mine pointed dripstone, dripstone blocks, sculk structures, tuff variants, and raw ore blocks |
+| 🌲 **Tree Felling** | Chop down whole trees (logs, wood, and giant trunks) and cleanly clear leaf canopies |
+| 🌾 **Crop Harvesting & Replant** | Harvest mature crop patches in one swing with automatic, instant age-0 replanting |
+| 🌊 **Outward Progressive Animation** | Watch blocks break or place in timed outward ripple waves with escalating acoustic chimes |
+| 🧱 **Outward Block Placement** | Place matching blocks sequentially outward in 2D planes while sneaking |
+| 🛡️ **Prevent Tool Break** | Automatically halts vein mining when tool durability hits 1, saving your max-tier tools |
+| 🎒 **Direct-to-Inventory Drops** | Routes mined items directly into your inventory so drops never fall into lava or dark ravines |
+| ⚡ **XP Auto-Collection** | Grants vanilla-accurate XP directly to your experience bar without entity orb clutter |
+| 🎮 **Flexible Activation Modifiers** | Choose always-on (`/vb`), sneak-to-activate (Shift), or sprint-to-activate (Ctrl) modes |
+| 🔮 **Multi-Layer Particle Juice** | Full block break effects (`Effect.STEP_SOUND`), 25-particle bursts, and mineral sparkles |
+| 🛡️ **Unbreaking Formula Respect** | Accurately calculates vanilla Unbreaking enchant math for fair durability consumption |
+| 🧩 **Proximity Vein Detection** | 3x3x3 26-neighbor scanning bridges diagonal gaps so veins aren't cut short |
+| 🛡️ **Budding Amethyst Protection** | Optional safeguard protects budding amethyst blocks to preserve crystal spawners |
+| 🏗️ **Creative Mode Clearing** | Supports Creative mode for rapid world clearing without dropping clutter |
+| 💾 **Persistent Toggle State** | Player preferences (`/vb`, `/vb place`, `/vb anim`) persist across reboots via `playerdata.yml` |
+| ⏱️ **Independent Cooldowns** | Per-feature cooldown timers to prevent spam and preserve server performance |
+| 🌍 **World Blacklist** | Disable VeinBreaker functionality in specific worlds (e.g., spawn, hubs, minigames) |
+| 🎨 **Rich Color Messages** | All chat messages support standard Minecraft `&` color formatting and placeholders |
+| ♻️ **Live In-Game Reload** | `/vb reload` refreshes `config.yml` and player caches without restarting the server |
+| 🚀 **1.21.x - 26.2 Compatibility** | Fully tested and compatible across Spigot, Paper, and modern server forks |
 
 ---
 
 ## 📦 Installation
 
-1. Download the latest `VeinBreaker-x.x.x.jar` from the [Releases](https://github.com/Usama-Balhasal/VeinBreaker/releases) page.
-2. Drop it into your server's `/plugins/` folder.
+1. Download the latest `VeinBreaker-2.0.0.jar` from the [Releases](https://github.com/Usama-Balhasal/VeinBreaker/releases) page.
+2. Place the JAR into your server's `plugins/` directory.
 3. Restart or reload your server.
-4. Edit `plugins/VeinBreaker/config.yml` to your liking.
-5. Run `/vb reload` to apply changes without a restart.
+4. Customize `plugins/VeinBreaker/config.yml` to your liking.
+5. Execute `/vb reload` to apply configuration changes instantly without a server restart.
 
 **Requirements:**
-- Minecraft **1.21.x**
-- Spigot or Paper (Paper recommended for best performance)
+- Minecraft **1.21.x - 26.2**
+- Spigot or Paper (Paper highly recommended for optimal scheduler performance)
 - Java 21+
 
 ---
 
 ## 🎮 Commands
 
-All commands use `/veinbreaker` or the alias `/vb`.
+All commands support both `/veinbreaker` and the shorthand `/vb`.
 
 | Command | Permission | Description |
 |---|---|---|
-| `/vb` | `veinbreaker.use` | Toggle VeinBreaker on/off |
+| `/vb` | `veinbreaker.use` | Toggle VeinBreaker on/off (persisted per player) |
 | `/vb toggle` | `veinbreaker.use` | Alias for toggle |
-| `/vb help` | `veinbreaker.help` | Show all commands and usage |
-| `/vb status` | `veinbreaker.use` | Show current state and feature settings |
-| `/vb reload` | `veinbreaker.reload` | Reload `config.yml` live |
-| `/vb permission add <node>` | `veinbreaker.admin` | Add a permission node to the use list |
-| `/vb permission remove <node>` | `veinbreaker.admin` | Remove a permission node from the use list |
+| `/vb place` | `veinbreaker.use` | Toggle outward sequential block placement |
+| `/vb anim` | `veinbreaker.use` | Toggle progressive outward ripple animation |
+| `/vb status` | `veinbreaker.use` | Display active player preferences, modifiers, and server limits |
+| `/vb help` | `veinbreaker.help` | View complete command list and usage |
+| `/vb reload` | `veinbreaker.reload` | Reload configuration and player data live |
+| `/vb permission add <node>` | `veinbreaker.admin` | Add a custom permission node to the allowed use list |
+| `/vb permission remove <node>` | `veinbreaker.admin` | Remove a permission node from the allowed use list |
 
 ---
 
@@ -74,166 +88,62 @@ All commands use `/veinbreaker` or the alias `/vb`.
 
 | Permission | Default | Description |
 |---|---|---|
-| `veinbreaker.use` | OP | Toggle and use VeinBreaker |
-| `veinbreaker.admin` | OP | All admin commands |
-| `veinbreaker.reload` | OP | `/vb reload` |
-| `veinbreaker.help` | Everyone | `/vb help` |
+| `veinbreaker.use` | OP | Allows toggling and using VeinBreaker mining features |
+| `veinbreaker.admin` | OP | Grants access to all administrative commands |
+| `veinbreaker.reload` | OP | Grants permission to execute `/vb reload` |
+| `veinbreaker.help` | Everyone | Grants permission to view `/vb help` |
 
-> **Tip:** You can add any custom permission node to the `permissions.use` list in `config.yml` so VeinBreaker integrates with your existing permission system.
-
----
-
-## ⚙️ Configuration
-
-The full `config.yml` is generated automatically on first run. Every option is documented inline.
-
-```yaml
-# ─── General ────────────────────────────────────────────────────────────────
-general:
-  debug: false                   # Extra console logging for troubleshooting
-  default-toggle-state: false    # Whether VeinBreaker starts ON for new players
-
-# ─── Features ────────────────────────────────────────────────────────────────
-features:
-  ore-vein-mining: true
-  tree-felling: true
-  crop-harvesting: true
-  crop-replant: true             # Auto-replant crops after harvest
-  xp-drops: true                 # Drop XP when vein-mining (Silk Touch suppresses)
-
-# ─── Permissions ─────────────────────────────────────────────────────────────
-permissions:
-  use:
-    - veinbreaker.use            # Add extra nodes to support custom perm plugins
-  admin:
-    - veinbreaker.admin
-
-# ─── Limits ──────────────────────────────────────────────────────────────────
-limits:
-  max-vein-size: 64
-  max-tree-size: 400             # Raised high enough for giant spruce/jungle trees
-  max-crop-size: 128
-
-# ─── XP Drops ────────────────────────────────────────────────────────────────
-xp:
-  diamond:        { min: 3, max: 7 }
-  emerald:        { min: 3, max: 7 }
-  coal:           { min: 0, max: 2 }
-  lapis:          { min: 2, max: 5 }
-  redstone:       { min: 1, max: 5 }
-  quartz:         { min: 2, max: 5 }
-  iron:           { min: 0, max: 0 }   # XP comes from smelting in vanilla
-  gold:           { min: 0, max: 0 }
-  copper:         { min: 0, max: 0 }
-  nether_gold:    { min: 0, max: 1 }
-  ancient_debris: { min: 0, max: 0 }
-
-# ─── Tool Requirements ───────────────────────────────────────────────────────
-tools:
-  ore-requires-pickaxe: true
-  tree-requires-axe: true
-  crop-requires-hoe: false
-
-# ─── Cooldowns (seconds) ─────────────────────────────────────────────────────
-cooldowns:
-  ore: 0
-  tree: 0
-  crop: 0
-
-# ─── Blacklisted Worlds ──────────────────────────────────────────────────────
-blacklisted-worlds: []
-
-# ─── Messages ────────────────────────────────────────────────────────────────
-messages:
-  prefix:         "&8[&bVeinBreaker&8]&r "
-  enabled:        "&aVeinBreaker &2enabled&a. Break a vein to mine it all!"
-  disabled:       "&cVeinBreaker &4disabled&c."
-  no-permission:  "&cYou don't have permission to use VeinBreaker."
-  reload-success: "&aConfiguration reloaded successfully."
-  cooldown:       "&cPlease wait &e{time}s &cbefore using VeinBreaker again."
-
-# ─── Sounds ──────────────────────────────────────────────────────────────────
-sounds:
-  enabled:    true
-  toggle-on:  BLOCK_NOTE_BLOCK_PLING
-  toggle-off: BLOCK_NOTE_BLOCK_BASS
-```
+> [!TIP]
+> You can add custom permission nodes from third-party plugins directly in `config.yml` under `permissions.use` or via `/vb permission add <node>`.
 
 ---
 
-## 🌲 How Tree Felling Works
+## 🔍 In-Depth Features
 
-VeinBreaker uses a **multi-source BFS (Breadth-First Search)** algorithm to detect trees:
-
-1. When a log is broken, the plugin scans outward finding all connected logs of the same species.
-2. All log positions are collected into a shared root set.
-3. A second BFS is seeded from **all** log positions simultaneously, collecting every connected leaf block within a configurable radius of any log.
-4. All logs and leaves are broken at once — no floating trees.
-
-**Supported tree types:**
-- Oak, Spruce, Birch, Jungle, Acacia, Dark Oak
-- Cherry, Mangrove, Bamboo
-- Giant spruce (2×2), Giant jungle (2×2), Dark oak (2×2)
-
-**Why the old approach failed on large trees:**  
-The previous version used separate radius-limited BFS searches per log block, making it easy for giant spruce (~200 logs) to exceed the cap and leave the top floating.  
-VeinBreaker 1.0.0 raises the cap to **400 logs** (configurable) and uses a shared-root leaf search.
+### ⛏️ Ore, Geode & Cave Mining
+VeinBreaker groups connected blocks by mineral family:
+- **Ores:** Coal, Iron, Copper, Gold, Redstone, Lapis, Diamond, Emerald, Nether Gold, Nether Quartz, Ancient Debris, and Deepslate variants.
+- **Raw Ore Blocks:** Mega cave veins containing `RAW_IRON_BLOCK`, `RAW_COPPER_BLOCK`, and `RAW_GOLD_BLOCK`.
+- **Geodes:** Amethyst blocks, budding amethyst, amethyst clusters, small/medium/large buds, calcite, and smooth basalt.
+- **Cave Features:** Pointed dripstone, dripstone blocks, glow lichen, tuff variants, and deep dark sculk formations (`SCULK`, `SCULK_CATALYST`, `SCULK_SENSOR`, `SCULK_SHRIEKER`, `SCULK_VEIN`).
+- **Budding Protection:** Enable `features.protect-budding-amethyst: true` to prevent players from accidentally mining crystal spawning blocks.
+- **Proximity Detection:** 3x3x3 26-neighbor scanning bridges diagonal corners so naturally generated veins aren't cut short.
 
 ---
 
-## ⛏️ How Ore Vein Mining Works
-
-1. When an ore is broken, the plugin BFS-scans connected ore blocks of the same family (up to `max-vein-size`).
-2. All items are dropped using Bukkit's `Block.getDrops(tool, player)` — Fortune and Silk Touch are **fully respected**.
-3. XP orbs are spawned per block based on the configured `xp` ranges.
-4. Silk Touch suppresses XP drops (matching vanilla).
-5. Tool durability decreases once per block, with Unbreaking enchantment respected.
-
-**Stone + Deepslate cross-layer mining:**  
-`COAL_ORE` and `DEEPSLATE_COAL_ORE` are treated as the same family, so veins that cross the stone/deepslate boundary are mined in a single action.
-
----
-
-## 🌾 How Crop Harvesting Works
-
-1. VeinBreaker only targets **fully-grown** crops (matching vanilla mechanics).
-2. Connected crops of the same type are collected via BFS.
-3. Items are dropped naturally.
-4. If `crop-replant: true`, the crop is **reset to age 0** (replanted) instead of being destroyed.
-
-**Supported crops:** Wheat, Carrots, Potatoes, Beetroots, Nether Wart, Cocoa Beans
+### 🌊 Progressive Ripple Animation & Particle Juice
+Instead of instantaneous, jarring mass block breaks, VeinBreaker can radiate outwards:
+- **Configurable Wave Timing:** Adjust `delay-ticks` (default: 1 tick = 0.05s) and `blocks-per-step` (default: 2 blocks).
+- **Sort Origin:** Ripple outward from the player's position (`PLAYER`) or the clicked block (`ORIGIN`).
+- **Acoustic Pitch Cascade:** Sound effects incrementally shift in pitch throughout the wave to create a satisfying ripple chime.
+- **Multi-Layer Particles:**
+  - **Native Block Destruction:** Calls Minecraft's level break event (`Effect.STEP_SOUND`) visible on all clients.
+  - **Dynamic Fracture Burst:** 25 directional `Particle.BLOCK` particles with velocity.
+  - **Mineral Sparkle Accents:** End Rod stars for Amethyst, Soul wisps for Sculk, Crit sparkles for Diamonds/Emeralds, and Enchanted glints for Gold/Copper/Redstone.
 
 ---
 
-## ❓ FAQ
-
-**Q: Does VeinBreaker work with Fortune and Silk Touch?**  
-A: Yes. Drops are calculated using Bukkit's native `getDrops(tool, player)` method, which handles all enchantments correctly.
-
-**Q: Will it cause lag on large servers?**  
-A: VeinBreaker uses configurable size limits (`max-vein-size`, `max-tree-size`, `max-crop-size`) to prevent runaway scans. All operations run synchronously on the main thread, which is required for block manipulation in Bukkit. For typical survival gameplay the operations complete in microseconds.
-
-**Q: Can I use a custom permission plugin like LuckPerms?**  
-A: Yes. Add your custom permission node to `permissions.use` in `config.yml` and grant it via LuckPerms (or any other permission plugin).
-
-**Q: Does it work with custom trees from other plugins?**  
-A: VeinBreaker detects trees by log material type and connected leaf blocks. As long as the tree is built from vanilla log and leaf materials, it will work.
-
-**Q: Can I disable tree felling and keep only ore mining?**  
-A: Yes — set `features.tree-felling: false` in `config.yml`.
-
-**Q: Is the plugin compatible with Paper?**  
-A: Yes, and Paper is recommended for best performance.
+### 🛡️ Tool Durability & Inventory Protection
+- **Prevent Tool Break:** Halts vein mining when your tool reaches 1 durability (`tool-durability.prevent-tool-break: true`), guaranteeing your enchanted Netherite tools are never lost.
+- **Unbreaking Integration:** Durability damage strictly calculates `unbreaking / (unbreaking + 1)` skip chances per block.
+- **Direct to Inventory:** Mined drops route straight into the player's inventory (`behaviour.direct-to-inventory: true`), preventing losses into lava lakes, ravines, or the void. Excess drops fall naturally at the block location.
+- **XP Auto-Collect:** Ore experience automatically fills the player's experience bar (`behaviour.xp-auto-collect: true`), preventing XP orb lag. Silk Touch correctly suppresses XP drops matching vanilla rules.
 
 ---
 
-## 📊 Performance Notes
+### 🎮 Activation Modes & Controls
+VeinBreaker provides multiple intuitive ways for players to activate features:
+- **Always-On:** Run `/vb` once; every matching block broken automatically vein-mines (`sneak-to-activate: false`).
+- **Hold-to-Activate (Shift / Ctrl):** When `sneak-to-activate: true` or `sprint-to-activate: true` is enabled, holding Shift (Sneak) or Ctrl (Sprint) triggers vein-breaking.
+- **Creative Mode:** Operators and creative world builders can vein-break without item clutter for instant terraforming (`behaviour.allow-creative: true`).
 
-- Block scanning uses an iterative BFS, not recursion — no stack overflow risk.
-- Each scan terminates as soon as the configured limit is reached.
-- Tool durability is applied with Unbreaking chance correctly — no double-damage.
-- Leaf removal is batched into a single shared scan to avoid redundant work.
-- The plugin has zero external dependencies.
+---
+
+### 🧱 Outward Block Placement
+- Sneak-place matching blocks to construct floors, ceilings, or walls in outward ripples.
+- **Planar Alignment:** Restricts block expansion strictly to the 2D plane perpendicular to the clicked face.
+- **Support Checking:** Ensures neighbor blocks share the same backing support material, preventing runaway floating blocks.
+- **Disabled by Default:** `features.block-placement: false` ensures standard sneak-building never triggers accidental mass placement. Enable it in `config.yml` or via `/vb place`.
 
 ---
 
@@ -245,53 +155,13 @@ cd VeinBreaker
 mvn clean package
 ```
 
-The compiled JAR will be in the `target/` directory.
+The compiled shaded JAR will be available in `target/VeinBreaker-2.0.0.jar`.
 
 **Requirements:** Java 21, Maven 3.8+
 
 ---
 
-## 📜 Changelog
+## 📄 License & Attribution
 
-### v1.0.0
-- Initial public release
-- Ore vein mining with Fortune/Silk Touch support
-- Tree felling with improved large-tree detection (max 400 logs)
-- Crop harvesting with optional auto-replant
-- Full `config.yml` with live reload
-- XP drops matching vanilla Minecraft amounts
-- Multi-permission system via config
-- `/vb help`, `/vb status`, `/vb reload`, `/vb permission add/remove`
-- Tool requirement enforcement (pickaxe / axe / hoe)
-- Per-feature cooldowns
-- Blacklisted world support
-- Color-coded messages
-- Sound feedback on toggle
-- Tool durability damage (Unbreaking respected)
-
----
-
-## 📝 Credits
-
-**Developer:** [Usama Balhasal](https://github.com/Usama-Balhasal)  
-**Website:** [iceforge.world](https://www.iceforge.world/)  
-**Instagram:** [@vlx_soma](https://www.instagram.com/vlx_soma/)  
-**LinkedIn:** [usama-balhasal](https://www.linkedin.com/in/usama-balhasal/)
-
----
-
-## ⚖️ License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License — Copyright (c) 2025 Usama Balhasal
-```
-
----
-
-<div align="center">
-
-Made with ❤️ for the Minecraft community · [IceForge](https://www.iceforge.world/)
-
-</div>
+VeinBreaker is licensed under the [MIT License](LICENSE).  
+Developed by **Usama Balhasal** | [Website](https://www.vlx.world/) · [GitHub](https://github.com/Usama-Balhasal/VeinBreaker)

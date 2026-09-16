@@ -1,178 +1,159 @@
 package org.ISoma05.veinBreaker.Utils;
 
+import org.ISoma05.veinBreaker.Config.ConfigManager;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Utility class that classifies blocks and items into categories used by VeinBreaker.
+ * Supports configurable sets loaded from ConfigManager with robust fallback sets,
+ * ensuring compatibility across Paper/Spigot 1.21.x - 26.2.
  */
 public final class BlockUtils {
 
     private BlockUtils() {}
 
     // =========================================================================
-    //  ORES
+    //  DEFAULT FALLBACK ORES
     // =========================================================================
 
-    private static final Set<Material> ORE_TYPES = Set.of(
-        // Overworld ores
-        Material.COAL_ORE,
-        Material.IRON_ORE,
-        Material.COPPER_ORE,
-        Material.GOLD_ORE,
-        Material.REDSTONE_ORE,
-        Material.LAPIS_ORE,
-        Material.DIAMOND_ORE,
-        Material.EMERALD_ORE,
-
-        // Deepslate variants
-        Material.DEEPSLATE_COAL_ORE,
-        Material.DEEPSLATE_IRON_ORE,
-        Material.DEEPSLATE_COPPER_ORE,
-        Material.DEEPSLATE_GOLD_ORE,
-        Material.DEEPSLATE_REDSTONE_ORE,
-        Material.DEEPSLATE_LAPIS_ORE,
-        Material.DEEPSLATE_DIAMOND_ORE,
-        Material.DEEPSLATE_EMERALD_ORE,
-
-        // Nether
-        Material.NETHER_GOLD_ORE,
-        Material.NETHER_QUARTZ_ORE,
-        Material.ANCIENT_DEBRIS
+    private static final Set<Material> DEFAULT_ORES = resolveMaterials(
+        "COAL_ORE", "IRON_ORE", "COPPER_ORE", "GOLD_ORE",
+        "REDSTONE_ORE", "LAPIS_ORE", "DIAMOND_ORE", "EMERALD_ORE",
+        "DEEPSLATE_COAL_ORE", "DEEPSLATE_IRON_ORE", "DEEPSLATE_COPPER_ORE", "DEEPSLATE_GOLD_ORE",
+        "DEEPSLATE_REDSTONE_ORE", "DEEPSLATE_LAPIS_ORE", "DEEPSLATE_DIAMOND_ORE", "DEEPSLATE_EMERALD_ORE",
+        "NETHER_GOLD_ORE", "NETHER_QUARTZ_ORE", "ANCIENT_DEBRIS",
+        "RAW_IRON_BLOCK", "RAW_COPPER_BLOCK", "RAW_GOLD_BLOCK"
     );
 
-    /** Returns true if the block is any kind of mineable ore. */
-    public static boolean isOre(Block block) {
-        return ORE_TYPES.contains(block.getType());
-    }
-
-    /**
-     * Returns true if {@code block} belongs to the same ore family as {@code reference}.
-     * Stone and deepslate variants of the same ore are treated as the same family,
-     * so veins that cross stone/deepslate layer boundaries are mined correctly.
-     */
-    public static boolean isSameOre(Block block, Block reference) {
-        if (!isOre(block)) return false;
-        return oreFamily(block.getType()).equals(oreFamily(reference.getType()));
-    }
-
-    private static String oreFamily(Material m) {
-        return switch (m) {
-            case COAL_ORE,          DEEPSLATE_COAL_ORE      -> "coal";
-            case IRON_ORE,          DEEPSLATE_IRON_ORE      -> "iron";
-            case COPPER_ORE,        DEEPSLATE_COPPER_ORE    -> "copper";
-            case GOLD_ORE,          DEEPSLATE_GOLD_ORE      -> "gold";
-            case REDSTONE_ORE,      DEEPSLATE_REDSTONE_ORE  -> "redstone";
-            case LAPIS_ORE,         DEEPSLATE_LAPIS_ORE     -> "lapis";
-            case DIAMOND_ORE,       DEEPSLATE_DIAMOND_ORE   -> "diamond";
-            case EMERALD_ORE,       DEEPSLATE_EMERALD_ORE   -> "emerald";
-            case NETHER_GOLD_ORE                            -> "nether_gold";
-            case NETHER_QUARTZ_ORE                          -> "quartz";
-            case ANCIENT_DEBRIS                             -> "ancient_debris";
-            default                                         -> m.name();
-        };
-    }
-
     // =========================================================================
-    //  LOGS / WOOD
+    //  DEFAULT FALLBACK GEODES
     // =========================================================================
 
-    private static final Set<Material> LOG_TYPES = Set.of(
-        Material.OAK_LOG,
-        Material.SPRUCE_LOG,
-        Material.BIRCH_LOG,
-        Material.JUNGLE_LOG,
-        Material.ACACIA_LOG,
-        Material.DARK_OAK_LOG,
-        Material.CHERRY_LOG,
-        Material.MANGROVE_LOG,
-        Material.BAMBOO_BLOCK,
-
-        // Bark-on-all-sides "wood" blocks (same species as logs)
-        Material.OAK_WOOD,
-        Material.SPRUCE_WOOD,
-        Material.BIRCH_WOOD,
-        Material.JUNGLE_WOOD,
-        Material.ACACIA_WOOD,
-        Material.DARK_OAK_WOOD,
-        Material.CHERRY_WOOD,
-        Material.MANGROVE_WOOD
+    private static final Set<Material> DEFAULT_GEODES = resolveMaterials(
+        "AMETHYST_BLOCK", "BUDDING_AMETHYST", "AMETHYST_CLUSTER",
+        "LARGE_AMETHYST_BUD", "MEDIUM_AMETHYST_BUD", "SMALL_AMETHYST_BUD",
+        "CALCITE", "SMOOTH_BASALT"
     );
 
-    public static boolean isLog(Block block) {
-        return LOG_TYPES.contains(block.getType());
-    }
-
-    /**
-     * True if {@code block} is the same species of log as {@code reference}.
-     * Matches log ↔ wood (bark) of the same tree species.
-     */
-    public static boolean isSameLog(Block block, Block reference) {
-        if (!isLog(block)) return false;
-        return logSpecies(block.getType()).equals(logSpecies(reference.getType()));
-    }
-
-    private static String logSpecies(Material m) {
-        return switch (m) {
-            case OAK_LOG,      OAK_WOOD      -> "oak";
-            case SPRUCE_LOG,   SPRUCE_WOOD   -> "spruce";
-            case BIRCH_LOG,    BIRCH_WOOD    -> "birch";
-            case JUNGLE_LOG,   JUNGLE_WOOD   -> "jungle";
-            case ACACIA_LOG,   ACACIA_WOOD   -> "acacia";
-            case DARK_OAK_LOG, DARK_OAK_WOOD -> "dark_oak";
-            case CHERRY_LOG,   CHERRY_WOOD   -> "cherry";
-            case MANGROVE_LOG, MANGROVE_WOOD -> "mangrove";
-            case BAMBOO_BLOCK               -> "bamboo";
-            default                         -> m.name();
-        };
-    }
-
     // =========================================================================
-    //  LEAVES
+    //  DEFAULT FALLBACK CAVE MATERIALS
     // =========================================================================
 
-    private static final Set<Material> LEAF_TYPES = Set.of(
-        Material.OAK_LEAVES,
-        Material.SPRUCE_LEAVES,
-        Material.BIRCH_LEAVES,
-        Material.JUNGLE_LEAVES,
-        Material.ACACIA_LEAVES,
-        Material.DARK_OAK_LEAVES,
-        Material.CHERRY_LEAVES,
-        Material.MANGROVE_LEAVES,
-        Material.AZALEA_LEAVES,
-        Material.FLOWERING_AZALEA_LEAVES
+    private static final Set<Material> DEFAULT_CAVES = resolveMaterials(
+        "DRIPSTONE_BLOCK", "POINTED_DRIPSTONE", "GLOW_LICHEN",
+        "SCULK", "SCULK_CATALYST", "SCULK_SENSOR", "SCULK_SHRIEKER", "SCULK_VEIN",
+        "TUFF", "POLISHED_TUFF", "CHISELED_TUFF", "TUFF_BRICKS"
     );
+
+    // =========================================================================
+    //  DEFAULT FALLBACK LOGS / WOOD
+    // =========================================================================
+
+    private static final Set<Material> DEFAULT_LOGS = resolveMaterials(
+        "OAK_LOG", "SPRUCE_LOG", "BIRCH_LOG", "JUNGLE_LOG",
+        "ACACIA_LOG", "DARK_OAK_LOG", "CHERRY_LOG", "MANGROVE_LOG",
+        "BAMBOO_BLOCK", "PALE_OAK_LOG",
+        "OAK_WOOD", "SPRUCE_WOOD", "BIRCH_WOOD", "JUNGLE_WOOD",
+        "ACACIA_WOOD", "DARK_OAK_WOOD", "CHERRY_WOOD", "MANGROVE_WOOD", "PALE_OAK_WOOD"
+    );
+
+    // =========================================================================
+    //  DEFAULT FALLBACK LEAVES
+    // =========================================================================
+
+    private static final Set<Material> DEFAULT_LEAVES = resolveMaterials(
+        "OAK_LEAVES", "SPRUCE_LEAVES", "BIRCH_LEAVES", "JUNGLE_LEAVES",
+        "ACACIA_LEAVES", "DARK_OAK_LEAVES", "CHERRY_LEAVES", "MANGROVE_LEAVES",
+        "AZALEA_LEAVES", "FLOWERING_AZALEA_LEAVES", "PALE_OAK_LEAVES"
+    );
+
+    // =========================================================================
+    //  DEFAULT FALLBACK CROPS
+    // =========================================================================
+
+    private static final Set<Material> DEFAULT_CROPS = resolveMaterials(
+        "WHEAT", "CARROTS", "POTATOES", "BEETROOTS", "NETHER_WART", "COCOA"
+    );
+
+    // =========================================================================
+    //  TOOLS
+    // =========================================================================
+
+    private static final Set<Material> PICKAXES = resolveMaterials(
+        "WOODEN_PICKAXE", "STONE_PICKAXE", "IRON_PICKAXE",
+        "GOLDEN_PICKAXE", "DIAMOND_PICKAXE", "NETHERITE_PICKAXE"
+    );
+
+    private static final Set<Material> AXES = resolveMaterials(
+        "WOODEN_AXE", "STONE_AXE", "IRON_AXE",
+        "GOLDEN_AXE", "DIAMOND_AXE", "NETHERITE_AXE"
+    );
+
+    private static final Set<Material> HOES = resolveMaterials(
+        "WOODEN_HOE", "STONE_HOE", "IRON_HOE",
+        "GOLDEN_HOE", "DIAMOND_HOE", "NETHERITE_HOE"
+    );
+
+    // =========================================================================
+    //  BLOCK CLASSIFICATION
+    // =========================================================================
+
+    public static boolean isOre(Block block, ConfigManager config) {
+        if (block == null) return false;
+        Set<Material> allowed = config.getAllowedOres();
+        if (allowed != null && !allowed.isEmpty()) {
+            return allowed.contains(block.getType());
+        }
+        return DEFAULT_ORES.contains(block.getType());
+    }
+
+    public static boolean isGeode(Block block, ConfigManager config) {
+        if (block == null) return false;
+        Set<Material> allowed = config.getAllowedGeodes();
+        if (allowed != null && !allowed.isEmpty()) {
+            return allowed.contains(block.getType());
+        }
+        return DEFAULT_GEODES.contains(block.getType());
+    }
+
+    public static boolean isCaveBlock(Block block, ConfigManager config) {
+        if (block == null) return false;
+        Set<Material> allowed = config.getAllowedCaves();
+        if (allowed != null && !allowed.isEmpty()) {
+            return allowed.contains(block.getType());
+        }
+        return DEFAULT_CAVES.contains(block.getType());
+    }
+
+    public static boolean isLog(Block block, ConfigManager config) {
+        if (block == null) return false;
+        Set<Material> allowed = config.getAllowedTrees();
+        if (allowed != null && !allowed.isEmpty()) {
+            return allowed.contains(block.getType());
+        }
+        return DEFAULT_LOGS.contains(block.getType());
+    }
 
     public static boolean isLeaf(Block block) {
-        return LEAF_TYPES.contains(block.getType());
+        return block != null && DEFAULT_LEAVES.contains(block.getType());
     }
 
-    // =========================================================================
-    //  CROPS
-    // =========================================================================
-
-    private static final Set<Material> CROP_TYPES = Set.of(
-        Material.WHEAT,
-        Material.CARROTS,
-        Material.POTATOES,
-        Material.BEETROOTS,
-        Material.NETHER_WART,
-        Material.COCOA
-    );
-
-    /**
-     * Returns true if the block is a fully-grown crop.
-     * Partially grown crops are intentionally skipped.
-     */
-    public static boolean isCrop(Block block) {
+    public static boolean isCrop(Block block, ConfigManager config) {
+        if (block == null) return false;
         Material mat = block.getType();
-        if (!CROP_TYPES.contains(mat)) return false;
+        Set<Material> allowed = config.getAllowedCrops();
+        boolean matches = (allowed != null && !allowed.isEmpty())
+            ? allowed.contains(mat)
+            : DEFAULT_CROPS.contains(mat);
+
+        if (!matches) return false;
 
         BlockData data = block.getBlockData();
         if (data instanceof Ageable ageable) {
@@ -181,44 +162,88 @@ public final class BlockUtils {
         return true;
     }
 
-    /**
-     * Returns true if {@code block} is the same fully-grown crop type as {@code reference}.
-     */
-    public static boolean isSameCrop(Block block, Block reference) {
-        if (!isCrop(block)) return false;
+    // =========================================================================
+    //  FAMILY EQUIVALENCE
+    // =========================================================================
+
+    public static boolean isSameOre(Block block, Block reference, ConfigManager config) {
+        if (!isOre(block, config)) return false;
+        return getBlockFamily(block.getType()).equals(getBlockFamily(reference.getType()));
+    }
+
+    public static boolean isSameGeode(Block block, Block reference, ConfigManager config) {
+        if (!isGeode(block, config)) return false;
+        return getBlockFamily(block.getType()).equals(getBlockFamily(reference.getType()));
+    }
+
+    public static boolean isSameCaveBlock(Block block, Block reference, ConfigManager config) {
+        if (!isCaveBlock(block, config)) return false;
+        return getBlockFamily(block.getType()).equals(getBlockFamily(reference.getType()));
+    }
+
+    public static boolean isSameLog(Block block, Block reference, ConfigManager config) {
+        if (!isLog(block, config)) return false;
+        return logSpecies(block.getType()).equals(logSpecies(reference.getType()));
+    }
+
+    public static boolean isSameCrop(Block block, Block reference, ConfigManager config) {
+        if (!isCrop(block, config)) return false;
         return block.getType() == reference.getType();
+    }
+
+    /**
+     * Maps a Material to a logical grouping family.
+     * Blocks in the same family are grouped together when vein-mining.
+     */
+    public static String getBlockFamily(Material m) {
+        String name = m.name();
+
+        // Ores
+        if (name.contains("COAL_ORE")) return "coal";
+        if (name.contains("IRON_ORE") || name.equals("RAW_IRON_BLOCK")) return "iron";
+        if (name.contains("COPPER_ORE") || name.equals("RAW_COPPER_BLOCK")) return "copper";
+        if (name.contains("GOLD_ORE") || name.equals("RAW_GOLD_BLOCK")) {
+            return name.contains("NETHER") ? "nether_gold" : "gold";
+        }
+        if (name.contains("REDSTONE_ORE")) return "redstone";
+        if (name.contains("LAPIS_ORE")) return "lapis";
+        if (name.contains("DIAMOND_ORE")) return "diamond";
+        if (name.contains("EMERALD_ORE")) return "emerald";
+        if (name.contains("QUARTZ_ORE")) return "quartz";
+        if (name.equals("ANCIENT_DEBRIS")) return "ancient_debris";
+
+        // Geodes & Amethyst
+        if (name.contains("AMETHYST")) return "amethyst";
+        if (name.equals("CALCITE")) return "calcite";
+        if (name.equals("SMOOTH_BASALT")) return "smooth_basalt";
+
+        // Caves
+        if (name.contains("DRIPSTONE")) return "dripstone";
+        if (name.contains("SCULK")) return "sculk";
+        if (name.contains("TUFF")) return "tuff";
+        if (name.equals("GLOW_LICHEN")) return "glow_lichen";
+
+        return name.toLowerCase();
+    }
+
+    private static String logSpecies(Material m) {
+        String name = m.name().toLowerCase();
+        if (name.contains("pale_oak")) return "pale_oak";
+        if (name.contains("dark_oak")) return "dark_oak";
+        if (name.contains("oak")) return "oak";
+        if (name.contains("spruce")) return "spruce";
+        if (name.contains("birch")) return "birch";
+        if (name.contains("jungle")) return "jungle";
+        if (name.contains("acacia")) return "acacia";
+        if (name.contains("cherry")) return "cherry";
+        if (name.contains("mangrove")) return "mangrove";
+        if (name.contains("bamboo")) return "bamboo";
+        return name;
     }
 
     // =========================================================================
     //  TOOL TYPE CHECKS
     // =========================================================================
-
-    private static final Set<Material> PICKAXES = Set.of(
-        Material.WOODEN_PICKAXE,
-        Material.STONE_PICKAXE,
-        Material.IRON_PICKAXE,
-        Material.GOLDEN_PICKAXE,
-        Material.DIAMOND_PICKAXE,
-        Material.NETHERITE_PICKAXE
-    );
-
-    private static final Set<Material> AXES = Set.of(
-        Material.WOODEN_AXE,
-        Material.STONE_AXE,
-        Material.IRON_AXE,
-        Material.GOLDEN_AXE,
-        Material.DIAMOND_AXE,
-        Material.NETHERITE_AXE
-    );
-
-    private static final Set<Material> HOES = Set.of(
-        Material.WOODEN_HOE,
-        Material.STONE_HOE,
-        Material.IRON_HOE,
-        Material.GOLDEN_HOE,
-        Material.DIAMOND_HOE,
-        Material.NETHERITE_HOE
-    );
 
     public static boolean isPickaxe(ItemStack item) {
         return item != null && PICKAXES.contains(item.getType());
@@ -230,5 +255,23 @@ public final class BlockUtils {
 
     public static boolean isHoe(ItemStack item) {
         return item != null && HOES.contains(item.getType());
+    }
+
+    // =========================================================================
+    //  HELPERS
+    // =========================================================================
+
+    /**
+     * Resolves material names safely, ignoring unrecognized names on older/newer servers.
+     */
+    private static Set<Material> resolveMaterials(String... names) {
+        Set<Material> set = new HashSet<>();
+        for (String name : names) {
+            Material m = Material.matchMaterial(name);
+            if (m != null) {
+                set.add(m);
+            }
+        }
+        return Set.copyOf(set);
     }
 }

@@ -1,6 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #  VeinBreaker — Configuration File
-#  Plugin by Usama Balhasal | https://www.iceforge.world/
+#  Plugin by Usama Balhasal | https://www.vlx.world/
 #  GitHub: https://github.com/Usama-Balhasal/VeinBreaker
 # ─────────────────────────────────────────────────────────────────────────────
 #
@@ -21,6 +21,16 @@ features:
   # Mine entire connected ore veins in one break.
   ore-vein-mining: true
 
+  # Mine connected geode formations (Amethyst blocks, buds, clusters, calcite, basalt).
+  geode-mining: true
+
+  # Mine connected cave features (Dripstone, Sculk formations, Tuff, raw ore blocks).
+  cave-mining: true
+
+  # Protect budding amethyst: if true, budding amethyst blocks will NOT be broken
+  # during geode vein mining, preserving natural crystal spawning blocks.
+  protect-budding-amethyst: false
+
   # Fell entire trees (logs + leaves) in one chop.
   tree-felling: true
 
@@ -31,9 +41,43 @@ features:
   # Set to false to break crops completely (no replant).
   crop-replant: true
 
+  # Outward block placement: place matching blocks sequentially outward from
+  # the player when placing a block while sneaking. Consumes blocks from inventory.
+  # Disabled by default so normal sneak-building does not trigger mass block placement.
+  block-placement: false
+
   # Drop XP orbs when vein-mining ores (vanilla-accurate amounts).
   # Note: Silk Touch suppresses XP, matching vanilla behaviour.
   xp-drops: true
+
+# ── Outward Progressive Animation ────────────────────────────────────────────
+# Controls the timed outward ripple animation when blocks are placed or broken.
+animation:
+  # Enable progressive outward animation (sequential placement/breaking waves).
+  # If false, blocks are placed or broken instantaneously.
+  enabled: true
+
+  # Delay in server ticks between each outward step (1 tick = 0.05s).
+  # 1-2 ticks provides a smooth, satisfying outward wave.
+  delay-ticks: 1
+
+  # Number of blocks processed per wave step.
+  # Higher = faster animation, Lower = more dramatic ripple effect.
+  blocks-per-step: 2
+
+  # Center from which the outward wave ripples:
+  # PLAYER = outward from player's current location.
+  # ORIGIN = outward from the initial block clicked.
+  sort-origin: PLAYER
+
+  # Display particles at each block location as the wave reaches it.
+  particles: true
+
+  # Play audio feedback at each wave step.
+  sounds: true
+
+  # Slightly shift sound pitch outward to create an escalating ripple chime.
+  sound-pitch-shift: true
 
 # ── Permissions ───────────────────────────────────────────────────────────────
 # Players need at least ONE permission from the 'use' list to toggle VeinBreaker.
@@ -49,67 +93,207 @@ permissions:
 # Hard caps to prevent lag on extremely large structures.
 # Raise these values for bigger trees / veins, or lower them for performance.
 limits:
-  max-vein-size: 64      # Maximum ore blocks scanned per vein
-  max-tree-size: 400     # Maximum log blocks scanned per tree (giant spruce ~200+)
-  max-crop-size: 128     # Maximum crop blocks scanned per patch
+  max-vein-size: 64         # Maximum ore blocks scanned per vein
+  max-geode-size: 64        # Maximum geode blocks scanned per cluster
+  max-cave-size: 64         # Maximum cave blocks scanned per cluster
+  max-tree-size: 400        # Maximum log blocks scanned per tree (giant trees ~200+)
+  max-crop-size: 128        # Maximum crop blocks scanned per patch
+  max-placement-size: 64    # Maximum blocks placed in outward placement mode
+
+# ── Allowed Blocks Configuration ──────────────────────────────────────────────
+# Configure which block types can be vein-mined and placed.
+# Material names must match Bukkit Material enum names.
+# Unknown or unsupported materials on older server versions are skipped safely.
+allowed-blocks:
+  ores:
+    # Overworld ores
+    - COAL_ORE
+    - IRON_ORE
+    - COPPER_ORE
+    - GOLD_ORE
+    - REDSTONE_ORE
+    - LAPIS_ORE
+    - DIAMOND_ORE
+    - EMERALD_ORE
+    # Deepslate variants
+    - DEEPSLATE_COAL_ORE
+    - DEEPSLATE_IRON_ORE
+    - DEEPSLATE_COPPER_ORE
+    - DEEPSLATE_GOLD_ORE
+    - DEEPSLATE_REDSTONE_ORE
+    - DEEPSLATE_LAPIS_ORE
+    - DEEPSLATE_DIAMOND_ORE
+    - DEEPSLATE_EMERALD_ORE
+    # Nether ores
+    - NETHER_GOLD_ORE
+    - NETHER_QUARTZ_ORE
+    - ANCIENT_DEBRIS
+    # Raw ore blocks (found in mega cave veins)
+    - RAW_IRON_BLOCK
+    - RAW_COPPER_BLOCK
+    - RAW_GOLD_BLOCK
+
+  geodes:
+    # Amethyst & Geode materials
+    - AMETHYST_BLOCK
+    - BUDDING_AMETHYST
+    - AMETHYST_CLUSTER
+    - LARGE_AMETHYST_BUD
+    - MEDIUM_AMETHYST_BUD
+    - SMALL_AMETHYST_BUD
+    - CALCITE
+    - SMOOTH_BASALT
+
+  caves:
+    # Dripstone formations
+    - DRIPSTONE_BLOCK
+    - POINTED_DRIPSTONE
+    - GLOW_LICHEN
+    # Deep Dark & Sculk formations
+    - SCULK
+    - SCULK_CATALYST
+    - SCULK_SENSOR
+    - SCULK_SHRIEKER
+    - SCULK_VEIN
+    # Tuff variants
+    - TUFF
+    - POLISHED_TUFF
+    - CHISELED_TUFF
+    - TUFF_BRICKS
+
+  trees:
+    - OAK_LOG
+    - SPRUCE_LOG
+    - BIRCH_LOG
+    - JUNGLE_LOG
+    - ACACIA_LOG
+    - DARK_OAK_LOG
+    - CHERRY_LOG
+    - MANGROVE_LOG
+    - BAMBOO_BLOCK
+    - PALE_OAK_LOG
+    - OAK_WOOD
+    - SPRUCE_WOOD
+    - BIRCH_WOOD
+    - JUNGLE_WOOD
+    - ACACIA_WOOD
+    - DARK_OAK_WOOD
+    - CHERRY_WOOD
+    - MANGROVE_WOOD
+    - PALE_OAK_WOOD
+
+  crops:
+    - WHEAT
+    - CARROTS
+    - POTATOES
+    - BEETROOTS
+    - NETHER_WART
+    - COCOA
 
 # ── XP Drops ──────────────────────────────────────────────────────────────────
 # XP amount per block broken. A random value between min and max is chosen.
-# Set both min and max to 0 to disable XP for a specific ore.
-#
-# Note: Iron, Gold, and Copper intentionally give 0 XP here because vanilla
-# grants their XP when smelted, not when mined.
+# Set both min and max to 0 to disable XP for a specific material.
 xp:
-  diamond:        { min: 3, max: 7 }
-  emerald:        { min: 3, max: 7 }
-  coal:           { min: 0, max: 2 }
-  lapis:          { min: 2, max: 5 }
-  redstone:       { min: 1, max: 5 }
-  quartz:         { min: 2, max: 5 }
-  iron:           { min: 0, max: 0 }
-  gold:           { min: 0, max: 0 }
-  copper:         { min: 0, max: 0 }
-  nether_gold:    { min: 0, max: 1 }
-  ancient_debris: { min: 0, max: 0 }
+  diamond:          { min: 3, max: 7 }
+  emerald:          { min: 3, max: 7 }
+  coal:             { min: 0, max: 2 }
+  lapis:            { min: 2, max: 5 }
+  redstone:         { min: 1, max: 5 }
+  quartz:           { min: 2, max: 5 }
+  iron:             { min: 0, max: 0 }
+  gold:             { min: 0, max: 0 }
+  copper:           { min: 0, max: 0 }
+  nether_gold:      { min: 0, max: 1 }
+  ancient_debris:   { min: 0, max: 0 }
+  amethyst_cluster: { min: 1, max: 3 }
+  sculk:            { min: 1, max: 1 }
+  sculk_catalyst:   { min: 5, max: 20 }
+  sculk_sensor:     { min: 5, max: 10 }
+  sculk_shrieker:   { min: 5, max: 10 }
 
 # ── Tool Requirements ─────────────────────────────────────────────────────────
 # If enabled, VeinBreaker only activates when the player holds the correct tool.
 tools:
-  ore-requires-pickaxe: true   # Must hold a pickaxe to vein-mine ores
-  tree-requires-axe: true      # Must hold an axe to fell trees
-  crop-requires-hoe: false     # Set true to require a hoe for crop harvesting
+  ore-requires-pickaxe: true     # Must hold a pickaxe to vein-mine ores
+  geode-requires-pickaxe: true   # Must hold a pickaxe to vein-mine geodes
+  cave-requires-pickaxe: true    # Must hold a pickaxe to vein-mine cave formations
+  tree-requires-axe: true        # Must hold an axe to fell trees
+  crop-requires-hoe: false       # Set true to require a hoe for crop harvesting
+  placement-requires-sneak: true # Must sneak (hold Shift) to activate outward block placement
 
 # ── Cooldowns ─────────────────────────────────────────────────────────────────
 # Per-feature cooldown in seconds. Set to 0 to disable.
 cooldowns:
   ore: 0
+  geode: 0
+  cave: 0
   tree: 0
   crop: 0
+  placement: 0
 
 # ── Blacklisted Worlds ────────────────────────────────────────────────────────
 # VeinBreaker will not activate in worlds listed here.
-# Example:
-#   blacklisted-worlds:
-#     - world_nether
-#     - my_creative_world
 blacklisted-worlds: []
+
+# ── Behaviour ─────────────────────────────────────────────────────────────────
+# Fine-grained control over how VeinBreaker behaves when activated.
+behaviour:
+  # If true, VeinBreaker only triggers while the player is sneaking (holding Shift) or sprinting.
+  # If false, VeinBreaker activates on break whenever toggled on with /vb.
+  sneak-to-activate: false
+
+  # If true, VeinBreaker only triggers while the player is holding the sprint button (Ctrl/Sprint).
+  # If false, sprinting is not required to vein-mine.
+  sprint-to-activate: false
+
+  # Allow vein-mining in Creative mode (breaks connected blocks without item/XP drops).
+  # Helpful for testing and creative world clearing.
+  allow-creative: true
+
+  # Send all mined drops directly into the player's inventory instead of
+  # dropping them on the ground. Excess items drop naturally.
+  direct-to-inventory: true
+
+  # Grant XP directly to the player's experience bar instead of spawning orbs.
+  xp-auto-collect: true
+
+# ── Tool Durability ───────────────────────────────────────────────────────────
+# Controls how the held tool loses durability during vein operations.
+tool-durability:
+  # Apply 1 durability damage per block mined, respecting Unbreaking.
+  enabled: true
+
+  # Stop mining if the next block would destroy the player's tool (keeps 1 durability).
+  prevent-tool-break: true
+
+# ── Vein Detection ────────────────────────────────────────────────────────────
+# Controls how ore and geode veins are discovered.
+vein-detection:
+  # Check all 26 neighbours (3x3x3 cube) to bridge 1-block gaps between ore pockets.
+  proximity-detection: true
 
 # ── Messages ──────────────────────────────────────────────────────────────────
 # Supports & colour codes. Use {time} as a placeholder for cooldown seconds.
 messages:
-  prefix:          "&8[&bVeinBreaker&8]&r "
-  enabled:         "&aVeinBreaker &2enabled&a. Break a vein to mine it all!"
-  disabled:        "&cVeinBreaker &4disabled&c."
-  no-permission:   "&cYou don't have permission to use VeinBreaker."
-  reload-success:  "&aConfiguration reloaded successfully."
-  cooldown:        "&cPlease wait &e{time}s &cbefore using VeinBreaker again."
-  console-only:    "&cOnly players can use this command."
+  prefix:            "&8[&bVeinBreaker&8]&r "
+  enabled:           "&aVeinBreaker &2enabled&a. Break a vein or place a block to activate!"
+  enabled-sneak:     "&aVeinBreaker &2enabled&a. &7(Hold Shift while mining to activate)"
+  disabled:          "&cVeinBreaker &4disabled&c."
+  placement-enabled:  "&aOutward block placement &2enabled&a."
+  placement-disabled: "&cOutward block placement &4disabled&c."
+  anim-enabled:       "&aOutward animations &2enabled&a."
+  anim-disabled:      "&cOutward animations &4disabled&c."
+  no-permission:     "&cYou don't have permission to use VeinBreaker."
+  reload-success:    "&aConfiguration reloaded successfully."
+  cooldown:          "&cPlease wait &e{time}s &cbefore using VeinBreaker again."
+  console-only:      "&cOnly players can use this command."
 
 # ── Sounds ────────────────────────────────────────────────────────────────────
-# Set enabled to false to disable all VeinBreaker sounds.
 # Sound names must be valid Bukkit Sound enum names.
 # Full list: https://jd.papermc.io/paper/1.21/org/bukkit/Sound.html
 sounds:
-  enabled:    true
-  toggle-on:  BLOCK_NOTE_BLOCK_PLING
-  toggle-off: BLOCK_NOTE_BLOCK_BASS
+  enabled:        true
+  toggle-on:      BLOCK_NOTE_BLOCK_PLING
+  toggle-off:     BLOCK_NOTE_BLOCK_BASS
+  place-step:     BLOCK_AMETHYST_BLOCK_STEP
+  break-step:     BLOCK_AMETHYST_BLOCK_BREAK
