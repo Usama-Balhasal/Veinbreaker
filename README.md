@@ -4,28 +4,19 @@
 
 **Mine entire ore veins, geode formations, and cave structures, fell whole trees, harvest crops, and place blocks with outward ripple animations.**
 
-<<<<<<< HEAD
 [![Version](https://img.shields.io/badge/version-2.0.0-blue?style=for-the-badge)](https://github.com/Usama-Balhasal/VeinBreaker/releases)
 [![Minecraft](https://img.shields.io/badge/minecraft-1.21.x--26.2-green?style=for-the-badge)](https://www.spigotmc.org/)
-=======
-[![Version](https://img.shields.io/badge/version-1.0.0-blue?style=for-the-badge)](https://github.com/Usama-Balhasal/Veinbreaker/releases)
-[![Minecraft](https://img.shields.io/badge/minecraft-1.21.x-green?style=for-the-badge)](https://www.spigotmc.org/)
->>>>>>> a80de220df9e4b50642bc3825b10494e0e5a54a3
 [![License](https://img.shields.io/badge/license-MIT-purple?style=for-the-badge)](LICENSE)
 [![API](https://img.shields.io/badge/API-Spigot%20%2F%20Paper-orange?style=for-the-badge)](https://hub.spigotmc.org/)
 
 *A lightweight, highly configurable quality-of-life plugin built for survival servers.*
 
-<<<<<<< HEAD
 [🌐 Website](https://www.vlx.world/) · [🐛 Report a Bug](https://github.com/Usama-Balhasal/VeinBreaker/issues) · [💡 Request a Feature](https://github.com/Usama-Balhasal/VeinBreaker/issues)
 
 <br>
 
 ### 🎬 Live Demo
 <img src="main.gif" alt="VeinBreaker Live Demo" width="85%" style="border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-=======
-[🌐 Website](https://www.iceforge.world/) · [🐛 Report a Bug](https://github.com/Usama-Balhasal/Veinbreaker/issues) · [💡 Request a Feature](https://github.com/Usama-Balhasal/Veinbreaker/issues)
->>>>>>> a80de220df9e4b50642bc3825b10494e0e5a54a3
 
 </div>
 
@@ -62,13 +53,8 @@
 
 ## 📦 Installation
 
-<<<<<<< HEAD
 1. Download the latest `VeinBreaker-2.0.0.jar` from the [Releases](https://github.com/Usama-Balhasal/VeinBreaker/releases) page.
 2. Place the JAR into your server's `plugins/` directory.
-=======
-1. Download the latest `VeinBreaker-x.x.x.jar` from the [Releases](https://github.com/Usama-Balhasal/Veinbreaker/releases) page.
-2. Drop it into your server's `/plugins/` folder.
->>>>>>> a80de220df9e4b50642bc3825b10494e0e5a54a3
 3. Restart or reload your server.
 4. Customize `plugins/VeinBreaker/config.yml` to your liking.
 5. Execute `/vb reload` to apply configuration changes instantly without a server restart.
@@ -125,7 +111,6 @@ VeinBreaker groups connected blocks by mineral family:
 
 ---
 
-<<<<<<< HEAD
 ### 🌊 Progressive Ripple Animation & Particle Juice
 Instead of instantaneous, jarring mass block breaks, VeinBreaker can radiate outwards:
 - **Configurable Wave Timing:** Adjust `delay-ticks` (default: 1 tick = 0.05s) and `blocks-per-step` (default: 2 blocks).
@@ -153,8 +138,6 @@ VeinBreaker provides multiple intuitive ways for players to activate features:
 - **Creative Mode:** Operators and creative world builders can vein-break without item clutter for instant terraforming (`behaviour.allow-creative: true`).
 
 ---
-=======
->>>>>>> a80de220df9e4b50642bc3825b10494e0e5a54a3
 
 ### 🧱 Outward Block Placement
 - Sneak-place matching blocks to construct floors, ceilings, or walls in outward ripples.
@@ -164,7 +147,6 @@ VeinBreaker provides multiple intuitive ways for players to activate features:
 
 ---
 
-<<<<<<< HEAD
 ## 🛠️ Building from Source
 
 ```bash
@@ -183,51 +165,3 @@ The compiled shaded JAR will be available in `target/VeinBreaker-2.0.0.jar`.
 
 VeinBreaker is licensed under the [MIT License](LICENSE).  
 Developed by **Usama Balhasal** | [Website](https://www.vlx.world/) · [GitHub](https://github.com/Usama-Balhasal/VeinBreaker)
-=======
-## 📜 Changelog
-
-### v1.0.0
-- Initial public release
-- Ore vein mining with Fortune/Silk Touch support
-- Tree felling with improved large-tree detection (max 400 logs)
-- Crop harvesting with optional auto-replant
-- Full `config.yml` with live reload
-- XP drops matching vanilla Minecraft amounts
-- Multi-permission system via config
-- `/vb help`, `/vb status`, `/vb reload`, `/vb permission add/remove`
-- Tool requirement enforcement (pickaxe / axe / hoe)
-- Per-feature cooldowns
-- Blacklisted world support
-- Color-coded messages
-- Sound feedback on toggle
-- Tool durability damage (Unbreaking respected)
-
----
-
-## Author
-
-**Usama Balhasal**
-
-- LinkedIn: [Usama Balhasal](https://www.linkedin.com/in/usama-balhasal/)
-- Instagram: [@vlx_soma](https://www.instagram.com/vlx_soma/)
-- Facebook: [Usama Balhasal](https://www.facebook.com/usama.balhasal.05/)
-- GitHub: [@vlxb](https://github.com/Usama-Balhasal)
-
----
-
-## ⚖️ License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
-```
-MIT License — Copyright (c) 2026 Usama Balhasal
-```
-
----
-
-<div align="center">
-
-Made with ❤️ for the Minecraft community · [IceForge](https://www.iceforge.world/)
-
-</div>
->>>>>>> a80de220df9e4b50642bc3825b10494e0e5a54a3
